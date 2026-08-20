@@ -16,6 +16,7 @@ interface ContentLayoutProps {
 
 export function ContentLayout({ title, children, notice }: ContentLayoutProps) {
   const { isMobile } = useKioskStore();
+  // autoSpeak 없음 = 자동 읽기 안 함, replay 버튼만 사용
   const { speakIntro, speakFull } = useTTS();
 
   return (

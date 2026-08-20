@@ -65,8 +65,8 @@ export default function Home() {
   const resetIdleTimer = useKioskStore((s) => s.resetIdleTimer);
   const sessionStarted = useKioskStore((s) => s.sessionStarted);
 
-  // TTS hook (화면 전환 시 자동 읽기)
-  const { speakIntro, speakFull } = useTTS();
+  // TTS - page.tsx에서만 autoSpeak: true (이중 재생 방지)
+  const { speakIntro, speakFull } = useTTS({ autoSpeak: true });
 
   // Mobile detection
   useEffect(() => {
@@ -88,8 +88,9 @@ export default function Home() {
     return () => events.forEach((e) => window.removeEventListener(e, handleInteraction));
   }, [sessionStarted, handleInteraction]);
 
-  const fontSizeClass =
-    fontSize === 'normal' ? '' : fontSize === 'large' ? 'text-[18px]' : 'text-[22px]';
+  // zoom 값: CSS zoom으로 글꼴 + 버튼 + 간격 모두 비례 확대
+  const zoomValue = fontSize === 'normal' ? 1 : fontSize === 'large' ? 1.15 : 1.3;
+  const zoomStyle = fontSize !== 'normal' ? { zoom: zoomValue } as React.CSSProperties : undefined;
 
   return (
     <AnimatePresence mode="wait">
@@ -100,7 +101,8 @@ export default function Home() {
         animate="animate"
         exit="exit"
         transition={{ duration: 0.25, ease: 'easeInOut' }}
-        className={`min-h-screen flex flex-col ${fontSizeClass} ${highContrast ? 'high-contrast' : ''} ${currentScreen === 'standby' ? '' : 'bg-background'}`}
+        className={`min-h-screen flex flex-col ${highContrast ? 'high-contrast' : ''} ${currentScreen === 'standby' ? '' : 'bg-background'}`}
+        style={zoomStyle}
       >
         <ScreenRenderer screen={currentScreen} />
       </motion.div>
