@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useKioskStore, type Screen } from '@/store/kiosk-store';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTTS } from '@/hooks/use-tts';
@@ -66,7 +66,7 @@ export default function Home() {
   const sessionStarted = useKioskStore((s) => s.sessionStarted);
 
   // TTS - page.tsx에서만 autoSpeak: true (이중 재생 방지)
-  const { speakIntro, speakFull } = useTTS({ autoSpeak: true });
+  useTTS({ autoSpeak: true });
 
   // Mobile detection
   useEffect(() => {
@@ -88,21 +88,28 @@ export default function Home() {
     return () => events.forEach((e) => window.removeEventListener(e, handleInteraction));
   }, [sessionStarted, handleInteraction]);
 
-  // zoom 값: CSS zoom으로 글꼴 + 버튼 + 간격 모두 비례 확대
-  const zoomValue = fontSize === 'normal' ? 1 : fontSize === 'large' ? 1.15 : 1.3;
-  const zoomStyle = fontSize !== 'normal' ? { zoom: zoomValue } as React.CSSProperties : undefined;
+  // zoom + high-contrast: useEffect로 적용하여 hydration mismatch 방지
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const zoomValue = fontSize === 'normal' ? 1 : fontSize === 'large' ? 1.15 : 1.3;
+    el.style.zoom = fontSize === 'normal' ? '' : String(zoomValue);
+    el.classList.toggle('high-contrast', highContrast);
+    el.classList.toggle('bg-background', currentScreen !== 'standby');
+  }, [fontSize, highContrast, currentScreen]);
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
+        ref={containerRef}
         key={currentScreen}
         variants={pageVariants}
         initial="initial"
         animate="animate"
         exit="exit"
         transition={{ duration: 0.25, ease: 'easeInOut' }}
-        className={`min-h-screen flex flex-col ${highContrast ? 'high-contrast' : ''} ${currentScreen === 'standby' ? '' : 'bg-background'}`}
-        style={zoomStyle}
+        className="min-h-screen flex flex-col"
       >
         <ScreenRenderer screen={currentScreen} />
       </motion.div>
