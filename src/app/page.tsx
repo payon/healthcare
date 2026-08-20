@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useCallback } from 'react';
 import { useKioskStore, type Screen } from '@/store/kiosk-store';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTTS } from '@/hooks/use-tts';
 import { StandbyScreen } from '@/components/kiosk/StandbyScreen';
 import { MainMenu } from '@/components/kiosk/MainMenu';
 import { EquipmentIntro } from '@/components/kiosk/screens/EquipmentIntro';
@@ -57,6 +59,37 @@ function ScreenRenderer({ screen }: { screen: Screen }) {
 
 export default function Home() {
   const currentScreen = useKioskStore((s) => s.currentScreen);
+  const fontSize = useKioskStore((s) => s.fontSize);
+  const highContrast = useKioskStore((s) => s.highContrast);
+  const setMobile = useKioskStore((s) => s.setMobile);
+  const resetIdleTimer = useKioskStore((s) => s.resetIdleTimer);
+  const sessionStarted = useKioskStore((s) => s.sessionStarted);
+
+  // TTS hook (화면 전환 시 자동 읽기)
+  const { speakIntro, speakFull } = useTTS();
+
+  // Mobile detection
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [setMobile]);
+
+  // Reset idle timer on any user interaction
+  const handleInteraction = useCallback(() => {
+    if (sessionStarted) resetIdleTimer();
+  }, [sessionStarted, resetIdleTimer]);
+
+  useEffect(() => {
+    if (!sessionStarted) return;
+    const events = ['touchstart', 'mousedown', 'keydown', 'scroll'] as const;
+    events.forEach((e) => window.addEventListener(e, handleInteraction, { passive: true }));
+    return () => events.forEach((e) => window.removeEventListener(e, handleInteraction));
+  }, [sessionStarted, handleInteraction]);
+
+  const fontSizeClass =
+    fontSize === 'normal' ? '' : fontSize === 'large' ? 'text-[18px]' : 'text-[22px]';
 
   return (
     <AnimatePresence mode="wait">
@@ -66,8 +99,8 @@ export default function Home() {
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className={`min-h-screen flex flex-col ${currentScreen === 'standby' ? '' : 'bg-background'}`}
+        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        className={`min-h-screen flex flex-col ${fontSizeClass} ${highContrast ? 'high-contrast' : ''} ${currentScreen === 'standby' ? '' : 'bg-background'}`}
       >
         <ScreenRenderer screen={currentScreen} />
       </motion.div>

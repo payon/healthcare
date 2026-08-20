@@ -159,3 +159,20 @@ Stage Summary:
 - Navigation flow confirmed (standby → main → content screens → completion → standby)
 - No measurement input forms, no personal data collection, no simulated results
 - Kiosk-friendly design with large touch targets and Korean text
+
+---
+Task ID: 2
+Agent: mobile-ui
+Task: Build mobile bottom nav + accessibility toolbar + responsive main menu
+
+Work Log:
+- Created MobileBottomNav.tsx
+- Created AccessibilityToolbar.tsx
+- Rewrote MainMenu.tsx for mobile-first design
+
+Stage Summary:
+- 5-tab bottom navigation for mobile (홈/장비/안내/측정/더보기)
+- Font size accessibility toolbar (3 levels)
+- Progress bar showing education completion
+- Mobile: horizontal scroll cards + bottom nav
+- Desktop: 3-column grid preserved

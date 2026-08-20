@@ -1,11 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Activity } from 'lucide-react';
+import { Activity, Volume2, VolumeX, Eye } from 'lucide-react';
 import { useKioskStore } from '@/store/kiosk-store';
 
 export function StandbyScreen() {
-  const { startSession } = useKioskStore();
+  const { startSession, ttsEnabled, setTtsEnabled, highContrast, setHighContrast } =
+    useKioskStore();
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-teal-500 via-emerald-600 to-green-800">
@@ -14,6 +15,32 @@ export function StandbyScreen() {
         <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-white/5" />
         <div className="absolute -bottom-48 -right-48 h-[500px] w-[500px] rounded-full bg-white/5" />
         <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-white/5" />
+      </div>
+
+      {/* Accessibility quick toggles (top-right, subtle on standby) */}
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        <button
+          onClick={() => setTtsEnabled(!ttsEnabled)}
+          aria-label={ttsEnabled ? '음성 안내 끄기' : '음성 안내 켜기'}
+          className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+            ttsEnabled
+              ? 'bg-white/30 text-white'
+              : 'bg-white/10 text-white/60 hover:bg-white/20'
+          }`}
+        >
+          {ttsEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+        </button>
+        <button
+          onClick={() => setHighContrast(!highContrast)}
+          aria-label={highContrast ? '고대비 끄기' : '고대비 켜기'}
+          className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+            highContrast
+              ? 'bg-white/30 text-white'
+              : 'bg-white/10 text-white/60 hover:bg-white/20'
+          }`}
+        >
+          <Eye className="h-5 w-5" />
+        </button>
       </div>
 
       {/* Content */}

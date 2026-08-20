@@ -196,3 +196,185 @@
 .measure-grip { @apply border-l-4 border-l-violet-400; }
 .measure-body { @apply border-l-4 border-l-emerald-400; }
 .measure-skin { @apply border-l-4 border-l-pink-400; }
+
+/* Mobile bottom nav safe area */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.pb-bottom-nav {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Snap scroll for horizontal card lists */
+.snap-x-mandatory {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-center {
+  scroll-snap-align: center;
+}
+
+.snap-start {
+  scroll-snap-align: start;
+}
+
+/* Hide scrollbar for horizontal scroll */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+
+.progress-bar-animated {
+  animation: progress-fill 0.6s ease-out;
+}
+
+/* Mobile active state haptic-like feedback */
+@keyframes tap-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+.tap-feedback:active {
+  animation: tap-pulse 0.15s ease-out;
+}
+
+/* ============================================
+   고대비 모드 (High Contrast Mode)
+   시각장애/저시력 사용자를 위한 접근성
+   ============================================ */
+.high-contrast {
+  /* 배경/전경: 블랙 앤 화이트 최대 대비 */
+  --background: oklch(0.08 0 0);
+  --foreground: oklch(1 0 0);
+  --card: oklch(0.12 0 0);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.12 0 0);
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(0.85 0.18 145);
+  --primary-foreground: oklch(0.08 0 0);
+  --secondary: oklch(0.2 0 0);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.2 0 0);
+  --muted-foreground: oklch(0.75 0 0);
+  --accent: oklch(0.2 0 0);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.75 0.2 25);
+  --border: oklch(0.5 0 0);
+  --input: oklch(0.35 0 0);
+  --ring: oklch(0.85 0.18 145);
+}
+
+.high-contrast .kiosk-card {
+  border-width: 3px;
+  border-color: oklch(0.7 0 0);
+  background: oklch(0.15 0 0);
+}
+
+.high-contrast .kiosk-card:hover {
+  border-color: oklch(0.85 0.18 145);
+}
+
+.high-contrast .kiosk-btn-primary {
+  background: oklch(0.85 0.18 145);
+  color: oklch(0.08 0 0);
+  border: 3px solid oklch(1 0 0);
+  font-weight: 800;
+}
+
+.high-contrast .kiosk-btn-secondary {
+  background: oklch(0.2 0 0);
+  color: oklch(1 0 0);
+  border: 3px solid oklch(0.7 0 0);
+}
+
+.high-contrast .kiosk-btn-outline {
+  border-width: 3px;
+  border-color: oklch(0.85 0.18 145);
+  color: oklch(0.85 0.18 145);
+  font-weight: 800;
+}
+
+.high-contrast .kiosk-btn-outline:hover {
+  background: oklch(0.85 0.18 145);
+  color: oklch(0.08 0 0);
+}
+
+.high-contrast .warning-box {
+  border-color: oklch(0.9 0.2 90);
+  background: oklch(0.2 0.05 90);
+  color: oklch(0.95 0.15 90);
+  border-width: 3px;
+}
+
+.high-contrast .notice-box {
+  border-color: oklch(0.85 0.18 145);
+  background: oklch(0.12 0.02 145);
+  color: oklch(0.95 0.1 145);
+  border-width: 3px;
+}
+
+.high-contrast .step-dot {
+  background: oklch(0.5 0 0);
+  border: 2px solid oklch(0.7 0 0);
+}
+
+.high-contrast .step-dot.active {
+  background: oklch(0.85 0.18 145);
+  border-color: oklch(1 0 0);
+}
+
+.high-contrast .step-dot.completed {
+  background: oklch(0.6 0 0);
+}
+
+/* 고대비 모드 측정 카드 보더 강화 */
+.high-contrast .measure-stress { border-left-width: 6px; border-left-color: oklch(0.8 0.2 25); }
+.high-contrast .measure-height { border-left-width: 6px; border-left-color: oklch(0.8 0.15 230); }
+.high-contrast .measure-bp { border-left-width: 6px; border-left-color: oklch(0.85 0.18 90); }
+.high-contrast .measure-grip { border-left-width: 6px; border-left-color: oklch(0.8 0.18 300); }
+.high-contrast .measure-body { border-left-width: 6px; border-left-color: oklch(0.8 0.18 155); }
+.high-contrast .measure-skin { border-left-width: 6px; border-left-color: oklch(0.8 0.15 350); }
+
+/* 고대비 모드 img 대체 */
+.high-contrast img {
+  border: 2px solid oklch(0.5 0 0);
+}
+
+/* 고대비 모드 스크롤바 */
+.high-contrast .kiosk-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.7 0 0);
+}
+
+/* 고대비 TTS 표시바 */
+.tts-indicator {
+  @apply flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium;
+  background: oklch(0.85 0.18 145);
+  color: oklch(0.08 0 0);
+}
+
+.high-contrast .tts-indicator {
+  background: oklch(1 0 0);
+  color: oklch(0.08 0 0);
+  border: 2px solid oklch(0.85 0.18 145);
+}
+
+/* TTS 재생 중 애니메이션 */
+@keyframes tts-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.tts-speaking {
+  animation: tts-pulse 1.5s ease-in-out infinite;
+}
