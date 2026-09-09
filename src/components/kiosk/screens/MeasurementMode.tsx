@@ -4,6 +4,9 @@ import { motion } from 'framer-motion';
 import { ClipboardCheck, GitBranch, ChevronRight, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { useKioskContent, type MeasurementData } from '@/hooks/use-kiosk-content';
+
+// ── Hardcoded fallback data ──
 
 const flowItems = [
   { num: 1, label: '신장' },
@@ -34,7 +37,56 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
+// ── Helper: render flow items from API data ──
+
+function renderDynamicFlowItems(measurements: MeasurementData[]) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      {measurements.map((item, index) => (
+        <span key={item.id} className="flex items-center gap-2">
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+            style={{ backgroundColor: item.color || '#0d9488' }}
+          >
+            {index + 1}
+          </span>
+          <span className="text-base font-medium">{item.name}</span>
+          {index < measurements.length - 1 && (
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function renderFallbackFlowItems() {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-2">
+      {flowItems.map((item, index) => (
+        <span key={item.num} className="flex items-center gap-2">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+            {item.num}
+          </span>
+          <span className="text-base font-medium">{item.label}</span>
+          {index < flowItems.length - 1 && (
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          )}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function MeasurementMode() {
+  const { measurements } = useKioskContent();
+
+  // Use API data if available, otherwise fall back to hardcoded
+  const hasApiMeasurements = measurements.length > 0;
+  const totalEstimatedTime = hasApiMeasurements
+    ? measurements.reduce((sum, m) => sum + m.estimatedTime, 0)
+    : 0; // fallback shows "약 5~8분"
+
   return (
     <ContentLayout
       title="측정 모드 안내"
@@ -72,27 +124,19 @@ export function MeasurementMode() {
                   모든 측정 항목을 순서대로 진행합니다.
                 </p>
 
-                {/* Flow Diagram */}
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  {flowItems.map((item, index) => (
-                    <span key={item.num} className="flex items-center gap-2">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                        {item.num}
-                      </span>
-                      <span className="text-base font-medium">
-                        {item.label}
-                      </span>
-                      {index < flowItems.length - 1 && (
-                        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-                      )}
-                    </span>
-                  ))}
-                </div>
+                {/* Flow Diagram - dynamic or fallback */}
+                {hasApiMeasurements
+                  ? renderDynamicFlowItems(measurements)
+                  : renderFallbackFlowItems()}
 
                 {/* Time Estimate */}
                 <div className="flex items-center gap-2 rounded-lg bg-primary/5 px-4 py-3">
                   <Clock className="h-5 w-5 text-primary" />
-                  <span className="text-base font-medium">약 5~8분 소요</span>
+                  <span className="text-base font-medium">
+                    {hasApiMeasurements
+                      ? `약 ${totalEstimatedTime}분 소요`
+                      : '약 5~8분 소요'}
+                  </span>
                 </div>
               </CardContent>
             </Card>

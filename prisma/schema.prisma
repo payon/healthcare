@@ -7,6 +7,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ── 기존 키오스크 모델 ──
+
 model KioskContent {
   id        String   @id @default(cuid())
   section   String   @unique
@@ -16,6 +18,7 @@ model KioskContent {
   qrCodeUrl String?
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
+  sections  ContentSection[]
 }
 
 model KioskLog {
@@ -31,4 +34,87 @@ model KioskSession {
   id        String   @id @default(cuid())
   startedAt DateTime @default(now())
   endedAt   DateTime?
+}
+
+// ── 관리자 대시보드 모델 ──
+
+model AdminUser {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  passwordHash    String
+  name            String
+  role            String    @default("editor") // superadmin, admin, editor, viewer
+  isActive        Boolean   @default(true)
+  failedAttempts  Int       @default(0)
+  lockedUntil     DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  sessions        AdminSession[]
+  auditLogs       AuditLog[]
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MeasurementItem {
+  id           String    @id @default(cuid())
+  key          String    @unique
+  name         String
+  description  String    @default("")
+  icon         String    @default("")
+  color        String    @default("#3B82F6")
+  order        Int       @default(0)
+  imageUrl     String?
+  estimatedTime Int      @default(5)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  equipment    MeasurementEquipment[]
+}
+
+model MeasurementEquipment {
+  id              String         @id @default(cuid())
+  measurementId   String
+  name            String
+  description     String         @default("")
+  preparationSteps String        @default("[]") // JSON string
+  precautions     String         @default("[]") // JSON string
+  imageUrl        String?
+  order           Int            @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  measurement     MeasurementItem @relation(fields: [measurementId], references: [id], onDelete: Cascade)
+}
+
+model ContentSection {
+  id         String   @id @default(cuid())
+  contentId  String
+  sectionKey String
+  title      String
+  body       String   @default("")
+  imageUrl   String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  content    KioskContent @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, sectionKey])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String   // create, update, delete
+  entity    String
+  entityId  String?
+  changes   String   @default("{}") // JSON string
+  createdAt DateTime @default(now())
+  user      AdminUser? @relation(fields: [userId], references: [id])
 }

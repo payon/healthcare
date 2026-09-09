@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { useKioskContent, type MeasurementData } from '@/hooks/use-kiosk-content';
+
+// ── Hardcoded fallback data ──
 
 interface MeasurementItem {
   icon: React.ElementType;
@@ -66,6 +69,23 @@ const measurements: MeasurementItem[] = [
   },
 ];
 
+// ── Icon mapping for dynamic data ──
+
+function renderMeasurementIcon(iconName: string, className: string, style?: React.CSSProperties) {
+  switch (iconName) {
+    case 'Brain': return <Brain className={className} style={style} />;
+    case 'Heart': return <Heart className={className} style={style} />;
+    case 'Hand': return <Hand className={className} style={style} />;
+    case 'Scale': return <Scale className={className} style={style} />;
+    case 'Sparkles': return <Sparkles className={className} style={style} />;
+    case 'Ruler': return <Ruler className={className} style={style} />;
+    case 'Trophy': return <Trophy className={className} style={style} />;
+    default: return <Brain className={className} style={style} />;
+  }
+}
+
+// ── Animation variants ──
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -80,6 +100,26 @@ const itemVariants = {
 };
 
 export function EquipmentIntro() {
+  const { getContent, measurements: apiMeasurements } = useKioskContent();
+
+  // Get equipment-intro content from API
+  const content = getContent('equipment-intro');
+  const hasApiContent = !!content;
+  const hasApiMeasurements = apiMeasurements.length > 0;
+
+  // Determine image source: API custom image or default
+  const imageSrc = hasApiContent && content.imageUrl
+    ? content.imageUrl
+    : '/kiosk-images/equipment.png';
+
+  // Determine description: API custom body or default
+  const description = hasApiContent && content.body
+    ? content.body
+    : 'Biogram MINI는 6가지 항목을 측정하여 종합 건강 점수를 제공합니다.';
+
+  // Build measurement items list: API or fallback
+  const useFallbackMeasurements = !hasApiMeasurements;
+
   return (
     <ContentLayout
       title="장비 소개"
@@ -92,7 +132,7 @@ export function EquipmentIntro() {
         className="mb-6 overflow-hidden rounded-2xl"
       >
         <Image
-          src="/kiosk-images/equipment.png"
+          src={imageSrc}
           alt="Biogram MINI 헬스케어 장비"
           width={1344}
           height={768}
@@ -107,7 +147,7 @@ export function EquipmentIntro() {
         transition={{ duration: 0.4, delay: 0.2 }}
         className="mb-6 text-lg leading-relaxed text-muted-foreground"
       >
-        Biogram MINI는 6가지 항목을 측정하여 종합 건강 점수를 제공합니다.
+        {description}
       </motion.p>
 
       <motion.div
@@ -116,26 +156,55 @@ export function EquipmentIntro() {
         animate="visible"
         className="grid grid-cols-1 gap-4 md:grid-cols-2"
       >
-        {measurements.map((item) => {
-          const Icon = item.icon;
-          return (
-            <motion.div key={item.name} variants={itemVariants}>
-              <Card className={`kiosk-card ${item.colorClass}`}>
-                <CardContent className="flex items-start gap-4 p-6">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                    <Icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{item.name}</h3>
-                    <p className="mt-1 text-base text-muted-foreground">
-                      {item.description}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
+        {useFallbackMeasurements
+          ? // Fallback hardcoded measurements
+            measurements.map((item) => {
+              const Icon = item.icon;
+              return (
+                <motion.div key={item.name} variants={itemVariants}>
+                  <Card className={`kiosk-card ${item.colorClass}`}>
+                    <CardContent className="flex items-start gap-4 p-6">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                        <Icon className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{item.name}</h3>
+                        <p className="mt-1 text-base text-muted-foreground">
+                          {item.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })
+          : // Dynamic API measurements
+            apiMeasurements.map((item: MeasurementData) => {
+              const borderColor = item.color || '#0d9488';
+              return (
+                <motion.div key={item.id} variants={itemVariants}>
+                  <Card
+                    className="kiosk-card"
+                    style={{ borderLeftWidth: '4px', borderLeftColor: borderColor }}
+                  >
+                    <CardContent className="flex items-start gap-4 p-6">
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                        style={{ backgroundColor: `${borderColor}15` }}
+                      >
+                        {renderMeasurementIcon(item.icon, 'h-6 w-6', { color: borderColor })}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">{item.name}</h3>
+                        <p className="mt-1 text-base text-muted-foreground">
+                          {item.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
       </motion.div>
     </ContentLayout>
   );

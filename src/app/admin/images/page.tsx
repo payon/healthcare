@@ -1,0 +1,192 @@
+'use client';
+
+import { useState, useRef, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Upload, Image as ImageIcon, Copy, Check, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface UploadedImage {
+  url: string;
+  filename: string;
+  size: number;
+  width: number;
+  height: number;
+  mimeType: string;
+}
+
+export default function ImagesPage() {
+  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadFile = useCallback(async (file: File) => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'general');
+
+      const res = await fetch('/api/admin/images/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '업로드에 실패했습니다');
+
+      setImages((prev) => [data.image, ...prev]);
+      toast.success(`${file.name} 업로드 완료`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '업로드에 실패했습니다');
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
+  const handleFiles = useCallback((files: FileList | File[]) => {
+    const validFiles = Array.from(files).filter((f) =>
+      ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'].includes(f.type)
+    );
+    if (validFiles.length === 0) {
+      toast.error('지원되는 이미지 파일만 업로드할 수 있습니다');
+      return;
+    }
+    validFiles.forEach(uploadFile);
+  }, [uploadFile]);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragActive(false);
+      if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles]
+  );
+
+  const copyUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(url);
+      toast.success('URL이 복사되었습니다');
+      setTimeout(() => setCopiedUrl(null), 2000);
+    } catch {
+      toast.error('복사에 실패했습니다');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        이미지 관리
+      </h2>
+
+      {/* Upload area */}
+      <Card>
+        <CardContent className="p-6">
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+              dragActive
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950'
+                : 'border-slate-300 dark:border-slate-600 hover:border-slate-400'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => e.target.files && handleFiles(e.target.files)}
+            />
+            {isUploading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 text-emerald-600 animate-spin" />
+                <p className="text-sm text-slate-600">업로드 중...</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <Upload className="h-8 w-8 text-slate-400" />
+                <p className="text-sm text-slate-600">
+                  드래그 앤 드롭 또는 클릭하여 이미지 업로드
+                </p>
+                <p className="text-xs text-slate-400">
+                  JPG, PNG, GIF, WebP, SVG 지원
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Image gallery */}
+      {images.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">업로드된 이미지</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {images.map((img, idx) => (
+                <div
+                  key={idx}
+                  className="group relative rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
+                >
+                  <div className="aspect-video bg-slate-100 dark:bg-slate-800">
+                    <img
+                      src={img.url}
+                      alt={img.filename}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="p-3 space-y-2">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                      {img.filename}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {img.width}×{img.height}
+                      </Badge>
+                      <span className="text-xs text-slate-400">
+                        {(img.size / 1024).toFixed(1)}KB
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => copyUrl(img.url)}
+                    >
+                      {copiedUrl === img.url ? (
+                        <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                      )}
+                      URL 복사
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {images.length === 0 && !isUploading && (
+        <div className="text-center py-12 text-slate-500">
+          <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <p>업로드된 이미지가 없습니다</p>
+        </div>
+      )}
+    </div>
+  );
+}

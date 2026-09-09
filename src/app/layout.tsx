@@ -3,6 +3,7 @@ import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ServiceWorkerRegistrar } from "@/components/kiosk/ServiceWorkerRegistrar";
+import { KioskProviders } from "@/components/kiosk/KioskProviders";
 
 const notoSansKR = Noto_Sans_KR({
   variable: "--font-noto-sans-kr",
@@ -44,7 +45,9 @@ export default function RootLayout({
       <body
         className={`${notoSansKR.variable} font-sans antialiased bg-background text-foreground`}
       >
-        {children}
+        <KioskProviders>
+          {children}
+        </KioskProviders>
         <ServiceWorkerRegistrar />
         <Toaster />
       </body>

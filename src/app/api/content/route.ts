@@ -5,6 +5,11 @@ export async function GET() {
   try {
     const contents = await db.kioskContent.findMany({
       orderBy: { section: 'asc' },
+      include: {
+        sections: {
+          orderBy: { order: 'asc' },
+        },
+      },
     });
     return NextResponse.json(contents);
   } catch {
