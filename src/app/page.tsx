@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { Suspense, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useKioskStore, type Screen } from '@/store/kiosk-store';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTTS } from '@/hooks/use-tts';
@@ -59,6 +60,20 @@ function ScreenRenderer({ screen }: { screen: Screen }) {
 }
 
 export default function Home() {
+  return (
+    <Suspense>
+      <HomeInner />
+    </Suspense>
+  );
+}
+
+const VALID_SCREENS: Screen[] = [
+  'standby', 'main', 'equipment-intro', 'location', 'app-install', 'signup',
+  'vein-register', 'login', 'non-member', 'measurement-mode',
+  'measurement-equipment', 'results', 'completion',
+];
+
+function HomeInner() {
   const currentScreen = useKioskStore((s) => s.currentScreen);
   const fontSize = useKioskStore((s) => s.fontSize);
   const highContrast = useKioskStore((s) => s.highContrast);
@@ -68,6 +83,19 @@ export default function Home() {
 
   // TTS - page.tsx에서만 autoSpeak: true (이중 재생 방지)
   useTTS({ autoSpeak: true });
+
+  // Deep link (?screen=): PWA shortcuts/TWA entry points land on a session
+  // with the requested screen instead of standby.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const target = searchParams.get('screen');
+    if (!target || !VALID_SCREENS.includes(target as Screen) || target === 'standby') return;
+    const state = useKioskStore.getState();
+    if (state.sessionStarted) return;
+    state.startSession();
+    if (target !== 'main') state.navigateTo(target as Screen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mobile detection
   useEffect(() => {

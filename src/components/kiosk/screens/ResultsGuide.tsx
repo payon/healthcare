@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Monitor, Smartphone, Send, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
-import { useKioskContent } from '@/hooks/use-kiosk-content';
+import { DbGroupCards } from '@/components/kiosk/DbGroupCards';
+import { useKioskContent, useScreenGroups } from '@/hooks/use-kiosk-content';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -28,6 +29,7 @@ const subSteps = [
 export function ResultsGuide() {
   const { getContent } = useKioskContent();
   const content = getContent('results');
+  const dbGroups = useScreenGroups('results');
 
   return (
     <ContentLayout
@@ -51,6 +53,11 @@ export function ResultsGuide() {
           {content?.body || '측정 완료 후, 다음 방법으로 결과를 확인할 수 있습니다.'}
         </motion.p>
 
+        {/* Method cards: admin groups win, hardcoded fallback otherwise */}
+        {dbGroups ? (
+          <DbGroupCards groups={dbGroups} />
+        ) : (
+        <>
         {/* Card 1: 장비 화면에서 확인 */}
         <motion.div variants={itemVariants}>
           <Card className="kiosk-card">
@@ -156,6 +163,8 @@ export function ResultsGuide() {
             </CardContent>
           </Card>
         </motion.div>
+        </>
+        )}
 
         {/* Important Notice */}
         <motion.div variants={itemVariants}>

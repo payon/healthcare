@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useKioskStore, type Screen } from '@/store/kiosk-store';
+import { useKioskContent } from '@/hooks/use-kiosk-content';
 import { ttsTexts } from '@/lib/tts-texts';
 
 const SPEECH_RATE = 0.85;
@@ -53,6 +54,23 @@ export function useTTS(options?: UseTTSOptions) {
   const prevScreenRef = useRef<Screen | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voicesHandlerRef = useRef<(() => void) | null>(null);
+  const { getContent } = useKioskContent();
+  // Admin-tuned speech params (defaults = constants below)
+  const rateRef = useRef<number>(SPEECH_RATE);
+  const voiceURIRef = useRef<string>('');
+
+  // Admin-managed voice scripts win over bundled fallbacks (empty = fallback)
+  const getAdminScript = useCallback(
+    (screen: Screen): { intro: string; full: string } | null => {
+      const content = getContent(screen);
+      if (!content) return null;
+      const intro = (content.ttsIntro || '').trim();
+      const full = (content.ttsFull || '').trim();
+      if (!intro && !full) return null;
+      return { intro: intro || full, full: full || intro };
+    },
+    [getContent]
+  );
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -68,12 +86,31 @@ export function useTTS(options?: UseTTSOptions) {
   const getKoreanVoice = useCallback((): SpeechSynthesisVoice | null => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return null;
     const voices = window.speechSynthesis.getVoices();
+    // Admin-pinned voice first (exact voiceURI match)
+    if (voiceURIRef.current) {
+      const pinned = voices.find((v) => v.voiceURI === voiceURIRef.current);
+      if (pinned) return pinned;
+    }
     const krVoice = voices.find((v) => v.lang.startsWith('ko'));
     if (krVoice) return krVoice;
     const krLike = voices.find(
       (v) => v.lang.includes('KO') || v.lang.includes('kr') || v.name.includes('Korean')
     );
     return krLike || voices[0] || null;
+  }, []);
+
+  // Load admin TTS tuning once (rate 0.5–1.5, preferred voiceURI)
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const s = data?.settings as Record<string, string> | undefined;
+        if (!s) return;
+        const rate = parseFloat(s['tts.rate'] ?? '');
+        if (Number.isFinite(rate)) rateRef.current = Math.min(1.5, Math.max(0.5, rate));
+        if (s['tts.voiceURI']) voiceURIRef.current = s['tts.voiceURI'].slice(0, 200);
+      })
+      .catch(() => {});
   }, []);
 
   const speak = useCallback(
@@ -91,7 +128,7 @@ export function useTTS(options?: UseTTSOptions) {
         if (myGen !== speechGeneration) return;
         if (index >= chunks.length) return;
         const utterance = new SpeechSynthesisUtterance(chunks[index]);
-        utterance.rate = SPEECH_RATE;
+        utterance.rate = rateRef.current;
         utterance.pitch = SPEECH_PITCH;
         utterance.volume = SPEECH_VOLUME;
         const voice = getKoreanVoice();
@@ -113,14 +150,24 @@ export function useTTS(options?: UseTTSOptions) {
   );
 
   const speakIntro = useCallback(() => {
+    const admin = getAdminScript(currentScreen);
+    if (admin) {
+      speak(admin.intro);
+      return;
+    }
     const content = ttsTexts[currentScreen];
     if (content) speak(content.intro);
-  }, [currentScreen, speak]);
+  }, [currentScreen, speak, getAdminScript]);
 
   const speakFull = useCallback(() => {
+    const admin = getAdminScript(currentScreen);
+    if (admin) {
+      speak(admin.full);
+      return;
+    }
     const content = ttsTexts[currentScreen];
     if (content) speak(content.full || content.intro);
-  }, [currentScreen, speak]);
+  }, [currentScreen, speak, getAdminScript]);
 
   const stop = useCallback(() => {
     speechGeneration += 1;

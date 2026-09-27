@@ -9,6 +9,7 @@ export interface ContentSection {
   title: string;
   body: string;
   imageUrl: string | null;
+  parentKey: string;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -24,6 +25,8 @@ export interface KioskContent {
   backgroundColor: string;
   backgroundImageUrl: string | null;
   mapImageUrl: string | null;
+  ttsIntro: string;
+  ttsFull: string;
   updatedAt: string;
   createdAt: string;
   sections: ContentSection[];
@@ -65,6 +68,8 @@ export function useUpdateContent(screenId: string) {  const queryClient = useQue
       backgroundColor?: string | null;
       backgroundImageUrl?: string | null;
       mapImageUrl?: string | null;
+      ttsIntro?: string | null;
+      ttsFull?: string | null;
     }) => {
       const res = await fetch(`/api/admin/content/${screenId}`, {
         method: 'PUT',
@@ -87,6 +92,7 @@ export interface SectionInput {
   title: string;
   body?: string;
   imageUrl?: string | null;
+  parentKey?: string;
   order?: number;
 }
 
@@ -118,7 +124,7 @@ export function useCreateSection(screenId: string) {
 export function useUpdateSection(screenId: string, key: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (data: { title?: string; body?: string; imageUrl?: string | null; order?: number }) => {
+    mutationFn: async (data: { title?: string; body?: string; imageUrl?: string | null; parentKey?: string; order?: number }) => {
       const res = await fetch(sectionUrl(screenId, key), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

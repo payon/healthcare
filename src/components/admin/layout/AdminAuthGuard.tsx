@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/hooks/admin/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PasswordChangeGate } from './PasswordChangeGate';
 
 const LOGIN_PATH = '/admin/login';
 
@@ -41,6 +42,11 @@ export function AdminAuthGuard({ children }: { children: ReactNode }) {
   }
 
   if (!user) return null;
+
+  // Forced rotation for seeded/reset credentials (APIs are blocked too)
+  if (!isLoginPage && user.mustChangePassword) {
+    return <PasswordChangeGate />;
+  }
 
   return <>{children}</>;
 }

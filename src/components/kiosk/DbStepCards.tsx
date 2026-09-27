@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
+import { ResponsiveImage } from '@/components/kiosk/ResponsiveImage';
 import type { ScreenStep } from '@/hooks/use-kiosk-content';
 
 /**
@@ -25,6 +26,19 @@ export function DbStepCards({ steps }: { steps: ScreenStep[] }) {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold">{step.title}</h3>
+                {step.imageUrl && (
+                  <div className="mb-2 mt-3 overflow-hidden rounded-lg">
+                    <ResponsiveImage
+                      src={step.imageUrl}
+                      fallbackSrc="/kiosk-images/equipment.png"
+                      alt={step.title}
+                      width={800}
+                      height={450}
+                      sizes="(max-width: 768px) 100vw, 800px"
+                      className="h-auto w-full object-cover"
+                    />
+                  </div>
+                )}
                 {step.lines.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {step.lines.map((line, i) => (

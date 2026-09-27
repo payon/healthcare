@@ -30,6 +30,8 @@ async function seed() {
         name: adminName,
         role: 'superadmin',
         isActive: true,
+        // Seeded credentials must be rotated on first login
+        mustChangePassword: true,
       },
     });
     console.log(`✅ 최고 관리자 생성: ${superadmin.email} (${superadmin.role})`);
@@ -57,6 +59,7 @@ async function seed() {
           name: u.name,
           role: u.role,
           isActive: true,
+          mustChangePassword: true,
         },
       });
       console.log(`✅ 데모 계정 생성: ${u.email} (${u.role})`);

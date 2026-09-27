@@ -53,6 +53,7 @@ import {
 import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import type { MeasurementEquipment } from '@/hooks/admin/use-measurements';
+import { linkOrPathField } from '@/lib/admin/schemas';
 
 const measurementFormSchema = z.object({
   key: z.string().min(1, '키를 입력하세요').max(50),
@@ -63,6 +64,7 @@ const measurementFormSchema = z.object({
   order: z.coerce.number().int().min(0),
   estimatedTime: z.coerce.number().int().min(1),
   isActive: z.boolean(),
+  imageUrl: linkOrPathField('유효한 URL 또는 / 로 시작하는 경로를 입력하세요'),
 });
 
 type MeasurementFormValues = z.infer<typeof measurementFormSchema>;
@@ -71,6 +73,7 @@ const equipmentFormSchema = z.object({
   name: z.string().min(1, '장비명을 입력하세요').max(100),
   description: z.string(),
   order: z.coerce.number().int().min(0),
+  imageUrl: linkOrPathField('유효한 URL 또는 / 로 시작하는 경로를 입력하세요'),
 });
 
 type EquipmentFormValues = z.infer<typeof equipmentFormSchema>;
@@ -112,6 +115,7 @@ export default function MeasurementDetailPage() {
       order: 0,
       estimatedTime: 5,
       isActive: true,
+      imageUrl: '',
     },
   });
 
@@ -129,6 +133,7 @@ export default function MeasurementDetailPage() {
         order: measurement.order,
         estimatedTime: measurement.estimatedTime,
         isActive: measurement.isActive,
+        imageUrl: measurement.imageUrl ?? '',
       });
     }
   }, [measurement, resetM]);
@@ -168,20 +173,20 @@ export default function MeasurementDetailPage() {
   } = useForm<EquipmentFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(equipmentFormSchema as any),
-    defaultValues: { name: '', description: '', order: 0 },
+    defaultValues: { name: '', description: '', order: 0, imageUrl: '' },
   });
 
   const openEquipDialog = (equip?: MeasurementEquipment) => {
     if (equip) {
       setEditingEquip(equip);
       setEditEquipId(equip.id);
-      resetE({ name: equip.name, description: equip.description, order: equip.order });
+      resetE({ name: equip.name, description: equip.description, order: equip.order, imageUrl: equip.imageUrl ?? '' });
       setPrepSteps(equip.preparationSteps.length > 0 ? equip.preparationSteps : ['']);
       setPrecautions(equip.precautions.length > 0 ? equip.precautions : ['']);
     } else {
       setEditingEquip(null);
       setEditEquipId(null);
-      resetE({ name: '', description: '', order: 0 });
+      resetE({ name: '', description: '', order: 0, imageUrl: '' });
       setPrepSteps(['']);
       setPrecautions(['']);
     }
@@ -195,7 +200,7 @@ export default function MeasurementDetailPage() {
       ...data,
       preparationSteps: steps,
       precautions: cautions,
-      imageUrl: null,
+      imageUrl: data.imageUrl || null,
     };
 
     if (editingEquip) {
@@ -278,6 +283,12 @@ export default function MeasurementDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="description">설명</Label>
               <Textarea id="description" rows={3} {...registerM('description')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="m-image">대표 이미지 URL (링크 또는 /admin-uploads/... 경로)</Label>
+              <Input id="m-image" placeholder="https://..." {...registerM('imageUrl')} />
+              {errorsM.imageUrl && <p className="text-sm text-destructive">{errorsM.imageUrl.message}</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -447,6 +458,12 @@ export default function MeasurementDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="eq-desc">설명</Label>
               <Textarea id="eq-desc" rows={2} {...registerE('description')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="eq-image">장비 이미지 URL (링크 또는 /admin-uploads/... 경로)</Label>
+              <Input id="eq-image" placeholder="https://..." {...registerE('imageUrl')} />
+              {errorsE.imageUrl && <p className="text-sm text-destructive">{errorsE.imageUrl.message}</p>}
             </div>
 
             <div className="space-y-2">

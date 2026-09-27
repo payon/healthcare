@@ -65,11 +65,13 @@ export const PUT = withAuth('content:write', async (request, context, auth) => {
 
     const data = parsed.data;
 
-    // backgroundColor is non-nullable in DB ("" = default); normalize null → ""
-    const { backgroundColor, ...rest } = data;
+    // backgroundColor/ttsIntro/ttsFull are non-nullable in DB ("" = default)
+    const { backgroundColor, ttsIntro, ttsFull, ...rest } = data;
     const updateData = {
       ...rest,
       ...(backgroundColor !== undefined ? { backgroundColor: backgroundColor ?? '' } : {}),
+      ...(ttsIntro !== undefined ? { ttsIntro: ttsIntro ?? '' } : {}),
+      ...(ttsFull !== undefined ? { ttsFull: ttsFull ?? '' } : {}),
     };
     const content = await db.kioskContent.update({
       where: { section: screenId },
@@ -95,6 +97,8 @@ export const PUT = withAuth('content:write', async (request, context, auth) => {
         backgroundColor: existing.backgroundColor,
         backgroundImageUrl: existing.backgroundImageUrl,
         mapImageUrl: existing.mapImageUrl,
+        ttsIntro: existing.ttsIntro,
+        ttsFull: existing.ttsFull,
       },
       after: {
         title: content.title,
@@ -104,6 +108,8 @@ export const PUT = withAuth('content:write', async (request, context, auth) => {
         backgroundColor: content.backgroundColor,
         backgroundImageUrl: content.backgroundImageUrl,
         mapImageUrl: content.mapImageUrl,
+        ttsIntro: content.ttsIntro,
+        ttsFull: content.ttsFull,
       },
     });
 

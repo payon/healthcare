@@ -68,12 +68,15 @@ export const contentUpdateSchema = z.object({
     .nullable(),
   backgroundImageUrl: linkOrPathField().optional().nullable(),
   mapImageUrl: linkOrPathField().optional().nullable(),
+  ttsIntro: z.string().max(2000).optional().nullable(),
+  ttsFull: z.string().max(5000).optional().nullable(),
 });
 
 export const sectionUpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   body: z.string().max(20000).optional(),
   imageUrl: linkOrPathField().optional().nullable(),
+  parentKey: z.string().max(64).regex(/^[a-z0-9-]*$/, '영문 소문자/숫자/하이픈만 사용하세요').optional(),
   order: z.number().int().min(0).optional(),
 });
 
@@ -89,6 +92,7 @@ export const createSectionSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요').max(200),
   body: z.string().max(20000).default(''),
   imageUrl: linkOrPathField().optional().nullable(),
+  parentKey: z.string().max(64).regex(/^[a-z0-9-]*$/, '영문 소문자/숫자/하이픈만 사용하세요').default(''),
   order: z.number().int().min(0).default(0),
 });
 

@@ -121,17 +121,36 @@ export default function ImagesPage() {
     }
   };
 
+  const cleanupOrphans = async () => {
+    if (!confirm('어느 화면에서도 쓰이지 않는 이미지를 모두 삭제할까요?')) return;
+    try {
+      const res = await fetch('/api/admin/images/cleanup', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '정리에 실패했습니다');
+      const freedMB = ((data.freedBytes ?? 0) / 1024 / 1024).toFixed(2);
+      toast.success(`${data.deleted}개 삭제, ${freedMB}MB 회수`);
+      reload();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '정리에 실패했습니다');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
           이미지 관리
         </h2>
-        {storage && (
-          <Badge variant="secondary">
-            {storage.totalCount}개 · {(storage.totalBytes / 1024 / 1024).toFixed(1)}MB 사용 중
-          </Badge>
-        )}
+        <div className="flex items-center gap-2">
+          {storage && (
+            <Badge variant="secondary">
+              {storage.totalCount}개 · {(storage.totalBytes / 1024 / 1024).toFixed(1)}MB 사용 중
+            </Badge>
+          )}
+          <Button variant="outline" size="sm" onClick={cleanupOrphans}>
+            미사용 정리
+          </Button>
+        </div>
       </div>
 
       {/* Upload area */}

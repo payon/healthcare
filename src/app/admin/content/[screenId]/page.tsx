@@ -29,6 +29,8 @@ const contentEditSchema = z.object({
     .nullable(),
   backgroundImageUrl: linkOrPathField('유효한 URL 또는 / 로 시작하는 경로를 입력하세요').nullable(),
   mapImageUrl: linkOrPathField('유효한 URL 또는 / 로 시작하는 경로를 입력하세요').nullable(),
+  ttsIntro: z.string().max(2000),
+  ttsFull: z.string().max(5000),
 });
 
 type ContentEditForm = z.infer<typeof contentEditSchema>;
@@ -56,14 +58,22 @@ function ImageLibraryPicker({
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- event-driven fetch on dialog open, not a render loop
     setLoading(true);
     fetch('/api/admin/images?limit=60')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.images) setImages(data.images);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- event-driven fetch on dialog open, not a render loop
+        if (!cancelled && data?.images) setImages(data.images);
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open ]);
 
   if (!open) return null;
@@ -130,6 +140,7 @@ const sectionFormSchema = z.object({
   title: z.string().min(1, '제목을 입력하세요').max(200),
   body: z.string().max(20000),
   imageUrl: linkOrPathField('유효한 URL 또는 / 로 시작하는 경로를 입력하세요'),
+  parentKey: z.string().max(64).regex(/^[a-z0-9-]*$/, '영문 소문자/숫자/하이픈만 사용하세요'),
   order: z.coerce.number().int().min(0),
 });
 
@@ -152,19 +163,19 @@ function SectionsManager({ screenId, sections }: { screenId: string; sections: C
   } = useForm<SectionForm>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(sectionFormSchema as any),
-    defaultValues: { sectionKey: '', title: '', body: '', imageUrl: '', order: 0 },
+    defaultValues: { sectionKey: '', title: '', body: '', imageUrl: '', parentKey: '', order: 0 },
   });
 
   const openAdd = () => {
     setEditingKey(null);
     setAdding(true);
-    reset({ sectionKey: '', title: '', body: '', imageUrl: '', order: sorted.length });
+    reset({ sectionKey: '', title: '', body: '', imageUrl: '', parentKey: '', order: sorted.length });
   };
 
   const openEdit = (s: ContentSection) => {
     setAdding(false);
     setEditingKey(s.sectionKey);
-    reset({ sectionKey: s.sectionKey, title: s.title, body: s.body, imageUrl: s.imageUrl ?? '', order: s.order });
+    reset({ sectionKey: s.sectionKey, title: s.title, body: s.body, imageUrl: s.imageUrl ?? '', parentKey: s.parentKey ?? '', order: s.order });
   };
 
   const close = () => {
@@ -177,11 +188,12 @@ function SectionsManager({ screenId, sections }: { screenId: string; sections: C
       title: data.title,
       body: data.body,
       imageUrl: data.imageUrl || null,
+      parentKey: data.parentKey,
       order: data.order,
     };
     if (adding) {
       createMutation.mutate(
-        { sectionKey: data.sectionKey, ...payload },
+        { sectionKey: data.sectionKey, ...payload, parentKey: data.parentKey },
         {
           onSuccess: () => { toast.success('섹션이 생성되었습니다'); close(); },
           onError: (err) => toast.error(err.message),
@@ -235,7 +247,9 @@ function SectionsManager({ screenId, sections }: { screenId: string; sections: C
             </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold">{s.title}</p>
-              <p className="truncate text-xs text-slate-500">{s.sectionKey}</p>
+              <p className="truncate text-xs text-slate-500">
+                {s.sectionKey}{s.parentKey ? ` · 부모:${s.parentKey}` : ''}
+              </p>
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={() => openEdit(s)} aria-label="섹션 수정">
               <Pencil className="h-4 w-4" />
@@ -264,6 +278,11 @@ function SectionsManager({ screenId, sections }: { screenId: string; sections: C
                 <Label>순서</Label>
                 <Input type="number" min={0} {...register('order')} />
               </div>
+            </div>
+            <div className="space-y-1">
+              <Label>부모 키 (중첩 그룹용, 비우면 최상위. 예: 로그인 방식 그룹 키)</Label>
+              <Input placeholder="비우면 단계 목록에 표시" {...register('parentKey')} />
+              {errors.parentKey && <p className="text-xs text-destructive">{errors.parentKey.message}</p>}
             </div>
             <div className="space-y-1">
               <Label>제목</Label>
@@ -359,6 +378,8 @@ export default function ContentDetailPage() {
         backgroundColor: content.backgroundColor ?? '',
         backgroundImageUrl: content.backgroundImageUrl ?? '',
         mapImageUrl: content.mapImageUrl ?? '',
+        ttsIntro: content.ttsIntro ?? '',
+        ttsFull: content.ttsFull ?? '',
       });
     }
   }, [content, reset]);
@@ -372,6 +393,8 @@ export default function ContentDetailPage() {
       backgroundColor: data.backgroundColor || null,
       backgroundImageUrl: data.backgroundImageUrl || null,
       mapImageUrl: data.mapImageUrl || null,
+      ttsIntro: data.ttsIntro,
+      ttsFull: data.ttsFull,
     });
   };
 
@@ -440,6 +463,16 @@ export default function ContentDetailPage() {
             <div className="space-y-2">
               <Label htmlFor="body">본문</Label>
               <Textarea id="body" rows={8} {...register('body')} />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ttsIntro">음성 안내 (짧은 버전, 비우면 기본 대본)</Label>
+              <Textarea id="ttsIntro" rows={3} {...register('ttsIntro')} placeholder="화면 진입 시 읽을 요약 문장" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ttsFull">음성 안내 (전체 버전, 비우면 짧은 버전 사용)</Label>
+              <Textarea id="ttsFull" rows={5} {...register('ttsFull')} placeholder="다시듣기용 전체 설명" />
             </div>
 
             <div className="space-y-2">

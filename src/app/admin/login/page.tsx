@@ -3,15 +3,15 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useLogin } from '@/hooks/admin/use-auth';
+import { useLogin, useVerify2fa } from '@/hooks/admin/use-auth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Loader2 } from 'lucide-react';
+import { Activity, Loader2, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const loginFormSchema = z.object({
   email: z.string().email('유효한 이메일을 입력하세요'),
@@ -22,7 +22,10 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export default function AdminLoginPage() {
   const loginMutation = useLogin();
+  const verify2faMutation = useVerify2fa();
   const router = useRouter();
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [totpToken, setTotpToken] = useState('');
 
   const {
     register,
@@ -34,15 +37,39 @@ export default function AdminLoginPage() {
   });
 
   const onSubmit = (data: LoginFormValues) => {
-    loginMutation.mutate(data);
+    loginMutation.mutate(data, {
+      onSuccess: (result) => {
+        if (result.need2fa && result.challenge) {
+          setChallenge(result.challenge);
+          return;
+        }
+        toast.success('로그인 성공');
+        router.replace('/admin');
+      },
+      onError: (err) => toast.error(err.message || '로그인에 실패했습니다'),
+    });
+  };
+
+  const onVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!challenge) return;
+    verify2faMutation.mutate(
+      { challenge, token: totpToken },
+      {
+        onSuccess: () => {
+          toast.success('로그인 성공');
+          router.replace('/admin');
+        },
+        onError: (err) => toast.error(err.message || '인증에 실패했습니다'),
+      }
+    );
   };
 
   useEffect(() => {
-    if (loginMutation.isSuccess) {
-      toast.success('로그인 성공');
-      router.replace('/admin');
+    if (loginMutation.isError) {
+      toast.error(loginMutation.error.message || '로그인에 실패했습니다');
     }
-  }, [loginMutation.isSuccess, router]);
+  }, [loginMutation.isError, loginMutation.error]);
 
   useEffect(() => {
     if (loginMutation.isError) {
@@ -67,6 +94,51 @@ export default function AdminLoginPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {challenge ? (
+            <form
+              onSubmit={onVerify}
+              className="space-y-4"
+            >
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <Smartphone className="h-4 w-4" />
+                인증 앱의 6자리 코드를 입력하세요 (5분 유효)
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="totp">2단계 인증 코드</Label>
+                <Input
+                  id="totp"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="123456"
+                  maxLength={8}
+                  value={totpToken}
+                  onChange={(e) => setTotpToken(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+                disabled={verify2faMutation.isPending || totpToken.length < 6}
+              >
+                {verify2faMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    확인 중...
+                  </>
+                ) : (
+                  '인증하기'
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => { setChallenge(null); setTotpToken(''); loginMutation.reset(); }}
+              >
+                처음으로 돌아가기
+              </Button>
+            </form>
+          ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
@@ -111,6 +183,7 @@ export default function AdminLoginPage() {
               )}
             </Button>
           </form>
+          )}
 
           <p className="mt-6 text-center text-xs text-slate-400">
             계정이 잠긴 경우 관리자에게 문의하세요

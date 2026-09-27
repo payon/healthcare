@@ -25,6 +25,9 @@ model KioskContent {
   // Location map image (location screen "찾아오는 길 지도" block).
   // Admin uploads a map capture; kiosk renders it large and senior-friendly.
   mapImageUrl String?
+  // Admin-editable TTS scripts (empty = bundled fallback in tts-texts.ts).
+  ttsIntro String @default("")
+  ttsFull  String @default("")
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
   sections  ContentSection[]
@@ -88,10 +91,24 @@ model AdminUser {
   failedAttempts  Int       @default(0)
   lockedUntil     DateTime?
   lastLoginAt     DateTime?
+  // Force password change (seeded defaults, resets): login succeeds but all
+  // API except me/change-password/logout is blocked until changed.
+  mustChangePassword Boolean @default(false)
+  // TOTP 2FA (otpauth). totpSecret set at setup, enabled after verification.
+  totpSecret  String?
+  totpEnabled Boolean @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   sessions        AdminSession[]
   auditLogs       AuditLog[]
+}
+
+// Admin-managed app settings (key-value). Only keys allowlisted in code are
+// exposed via public /api/settings (e.g. tts.*). Never store secrets here.
+model AppSetting {
+  key       String   @id
+  value     String   @default("")
+  updatedAt DateTime @updatedAt
 }
 
 model AdminSession {
@@ -140,6 +157,10 @@ model ContentSection {
   title      String
   body       String   @default("")
   imageUrl   String?
+  // Grouping for nested structures (e.g. LoginGuide methods: parent group
+  // sections with children whose parentKey points at the group key).
+  // Flat step lists use parentKey = "".
+  parentKey  String   @default("")
   order      Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

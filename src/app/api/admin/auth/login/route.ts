@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { SignJWT } from 'jose';
+import { randomUUID } from 'crypto';
 import { db } from '@/lib/db';
 import { loginSchema } from '@/lib/admin/schemas';
 import { verifyPassword } from '@/lib/admin/password';
@@ -9,6 +11,18 @@ import { checkRateLimit, getClientIp } from '@/lib/admin/rate-limit';
 import { isOriginAllowed } from '@/lib/admin/csrf';
 
 const GENERIC_ERROR = '이메일 또는 비밀번호가 올바르지 않습니다';
+
+function userPayload(user: { id: string; email: string; name: string; role: string; mustChangePassword: boolean; totpEnabled: boolean }) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    mustChangePassword: user.mustChangePassword,
+    totpEnabled: user.totpEnabled,
+    lastLoginAt: new Date(),
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -76,15 +90,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Step 2 for 2FA-enabled accounts: issue a short-lived challenge instead
+    // of a session. The session (and attempt reset) happens only after TOTP.
+    if (user.totpEnabled) {
+      const secret = process.env.JWT_SECRET;
+      if (!secret || secret.length < 32) throw new Error('JWT_SECRET is not configured');
+      const challenge = await new SignJWT({ sub: user.id, purpose: '2fa', jti: randomUUID() })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('5m')
+        .sign(new TextEncoder().encode(secret));
+      await logAudit({ userId: user.id, action: 'login_2fa_challenge', entity: 'AdminSession' });
+      return NextResponse.json({ need2fa: true, challenge });
+    }
+
     const token = await createSession(user.id, user.role as 'superadmin' | 'admin' | 'editor' | 'viewer');
 
     await resetFailedAttempts(user.id);
 
     await logAudit({ userId: user.id, action: 'login', entity: 'AdminSession' });
 
-    const response = NextResponse.json({
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, lastLoginAt: new Date() },
-    });
+    const response = NextResponse.json({ user: userPayload(user) });
 
     return setSessionCookie(response, token, isSecureRequest(request));
   } catch (error) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/admin/middleware';
 import { createUserSchema } from '@/lib/admin/schemas';
-import { hashPassword } from '@/lib/admin/password';
+import { hashPassword, rejectBreachedPassword } from '@/lib/admin/password';
 import { logAudit } from '@/lib/admin/audit';
 import { hasPermission, type Role } from '@/lib/admin/rbac';
 
@@ -104,6 +104,15 @@ export const POST = withAuth('users:write', async (request, _context, auth) => {
       return NextResponse.json(
         { error: '이미 존재하는 이메일입니다', code: 'DUPLICATE_EMAIL' },
         { status: 409 }
+      );
+    }
+
+    try {
+      await rejectBreachedPassword(password);
+    } catch (e) {
+      return NextResponse.json(
+        { error: e instanceof Error ? e.message : '비밀번호를 사용할 수 없습니다' },
+        { status: 400 }
       );
     }
 

@@ -272,9 +272,29 @@ CloudPanel 방화벽에서 외부 포트(3100)를 열 필요는 없습니다 (ng
 |---|---|---|
 | `PORT` | 예 | `3100` |
 | `NODE_ENV` | 예 | `production` |
-| `DATABASE_URL` | 예 | `file:/home/kiosk-user/data/custom.db` |
+| `DATABASE_URL` | 예 | `postgresql://biogram:PW@db:5432/biogram?schema=public` |
 | `JWT_SECRET` | 예 | `openssl rand -base64 48` 출력값 |
-| `UPLOAD_DIR` | 권장 | `/home/kiosk-user/uploads` |
+| `UPLOAD_DIR` | 권장 | `/data/uploads` (Docker) 또는 `/home/kiosk-user/uploads` |
 | `SEED_ADMIN_EMAIL` | 최초 1회 | `admin@biogram.co.kr` |
 | `SEED_ADMIN_PASSWORD` | 최초 1회 | 12자+ 복잡도 충족 |
 | `SEED_ADMIN_NAME` | 선택 | `최관리` |
+| `SEED_ON_START` | 선택 | `true`면 부팅 시 시드 실행 (Docker entrypoint) |
+| `ASSETLINKS_JSON` | TWA 시 | Play Console assetlinks 배열 JSON 문자열 |
+| `KIOSK_LOG_RETENTION_DAYS` | 선택 | `90` (기본값, `db:retention`용) |
+| `AUDIT_LOG_RETENTION_DAYS` | 선택 | `365` (기본값) |
+
+## 부록: 보안·운영 메모 (2026-09-27 이후)
+
+* **최초 로그인 강제 변경**: 시드/초기화 계정은 `mustChangePassword` 상태에서
+  로그인되며, 변경 전까지 모든 관리 API가 403입니다.
+* **2FA(TOTP)**: 관리자 **보안 설정**에서 QR 등록 → 로그인 2단계로 전환.
+  기기 분실 시 최고관리자가 사용자 관리에서 초기화(`users:role` 필요).
+* **세션**: 활동 시 8시간 슬라이딩 연장(최대 24시간), 계정당 5세션 상한.
+* **유출 비번 차단**: 설정/변경 시 HaveIBeenPwned 조회 (오프라인이면 경고 후 통과).
+* **보관 정책**: `bun run db:retention` (KioskLog 90일·AuditLog 365일, 배치 삭제).
+  cron 예: `0 3 * * * cd <프로젝트> && bun run db:retention`.
+* **PG 백업**: `docker exec biogram-db pg_dump -U biogram biogram > backup.sql`
+  (복구: `psql` 로 restore). 주 1회 + 업데이트 전.
+* **TWA**: `ASSETLINKS_JSON`에 Play 지문 배열을 넣으면
+  `/.well-known/assetlinks.json` 서빙. 매니페스트는 `/api/pwa/manifest`(동적).
+* **CI**: `.github/workflows/ci.yml` (install→generate→tsc→eslint→build).

@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
         name: true,
         role: true,
         isActive: true,
+        mustChangePassword: true,
+        totpEnabled: true,
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,

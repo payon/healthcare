@@ -11,6 +11,7 @@ export interface ContentSection {
   title: string;
   body: string;
   imageUrl: string | null;
+  parentKey: string;
   order: number;
   createdAt: string;
   updatedAt: string;
@@ -26,6 +27,8 @@ export interface KioskContentData {
   backgroundColor: string;
   backgroundImageUrl: string | null;
   mapImageUrl: string | null;
+  ttsIntro: string;
+  ttsFull: string;
   sections: ContentSection[];
   updatedAt: string;
   createdAt: string;
@@ -125,26 +128,64 @@ export interface ScreenStep {
 }
 
 /**
- * Admin-managed step list for a screen (ContentSection rows ordered by `order`).
- * - Card-style steps: `title` + `lines` (body split by newline).
- * - Plain string lists: use `text` (= lines joined, or title when body empty).
- * Returns null when no sections exist → screens keep hardcoded fallbacks.
+ * Admin-managed step list for a screen (ContentSection rows with parentKey="",
+ * ordered by `order`). Card-style steps use `title` + `lines`.
  */
 export function useScreenSteps(section: string): ScreenStep[] | null {
   const { contents } = useKioskContent();
   const content = contents.find((c) => c.section === section);
-  if (!content || content.sections.length === 0) return null;
-  return [...content.sections]
+  const rows = (content?.sections ?? []).filter((s) => !s.parentKey);
+  if (rows.length === 0) return null;
+  return [...rows]
     .sort((a, b) => a.order - b.order)
-    .map((s) => ({
-      title: s.title,
-      lines: s.body
-        .split('\n')
-        .map((l) => l.trim())
-        .filter(Boolean),
-      imageUrl: s.imageUrl,
-      order: s.order,
-    }));
+    .map(toStep);
+}
+
+export interface ScreenGroup {
+  key: string;
+  title: string;
+  imageUrl: string | null;
+  order: number;
+  children: ScreenStep[];
+}
+
+/**
+ * Nested groups: sections with parentKey="<groupKey>" attach to the group
+ * section whose sectionKey equals that key. Groups themselves are sections
+ * with parentKey="". Returns null when no groups exist → hardcoded fallback.
+ */
+export function useScreenGroups(section: string): ScreenGroup[] | null {
+  const { contents } = useKioskContent();
+  const content = contents.find((c) => c.section === section);
+  const rows = content?.sections ?? [];
+  if (rows.length === 0) return null;
+  const groups = [...rows]
+    .filter((s) => !s.parentKey)
+    .sort((a, b) => a.order - b.order);
+  const result: ScreenGroup[] = groups.map((g) => ({
+    key: g.sectionKey,
+    title: g.title,
+    imageUrl: g.imageUrl,
+    order: g.order,
+    children: [...rows]
+      .filter((s) => s.parentKey === g.sectionKey)
+      .sort((a, b) => a.order - b.order)
+      .map(toStep),
+  }));
+  if (!result.some((g) => g.children.length > 0)) return null;
+  return result;
+}
+
+function toStep(s: { title: string; body: string; imageUrl: string | null; order: number }): ScreenStep {
+  return {
+    title: s.title,
+    lines: s.body
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean),
+    imageUrl: s.imageUrl,
+    order: s.order,
+  };
 }
 
 export function stepText(step: ScreenStep): string {

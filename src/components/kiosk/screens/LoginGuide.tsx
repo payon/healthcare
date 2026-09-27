@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Fingerprint, QrCode, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
-import { useKioskContent } from '@/hooks/use-kiosk-content';
+import { DbGroupCards } from '@/components/kiosk/DbGroupCards';
+import { useKioskContent, useScreenGroups } from '@/hooks/use-kiosk-content';
 
 interface LoginStep {
   title: string;
@@ -74,6 +75,7 @@ const itemVariants = {
 export function LoginGuide() {
   const { getContent } = useKioskContent();
   const content = getContent('login');
+  const dbGroups = useScreenGroups('login');
 
   return (
     <ContentLayout
@@ -98,7 +100,10 @@ export function LoginGuide() {
           {content?.body || '회원가입 완료 후, 다음 방법으로 로그인할 수 있습니다.'}
         </motion.p>
 
-        {/* Login Method Cards */}
+        {/* Login Method Cards: admin groups win, hardcoded fallback otherwise */}
+        {dbGroups ? (
+          <DbGroupCards groups={dbGroups} />
+        ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {loginMethods.map((method) => {
             const Icon = method.icon;
@@ -138,6 +143,7 @@ export function LoginGuide() {
             );
           })}
         </div>
+        )}
 
         {/* Warning Box */}
         <motion.div variants={itemVariants}>

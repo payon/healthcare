@@ -53,13 +53,22 @@ export function withAuth(permission: Permission, handler: AuthenticatedHandler):
       // Check user is still active
       const user = await db.adminUser.findUnique({
         where: { id: payload.userId },
-        select: { isActive: true, role: true },
+        select: { isActive: true, role: true, mustChangePassword: true },
       });
 
       if (!user || !user.isActive) {
         return NextResponse.json(
           { error: '비활성화된 계정입니다', code: 'ACCOUNT_DISABLED' },
           { status: 401 }
+        );
+      }
+
+      // Forced password change: only the change-password endpoint is reachable
+      // (logout/me are unwrapped routes and stay available).
+      if (user.mustChangePassword && !request.nextUrl.pathname.endsWith('/auth/change-password')) {
+        return NextResponse.json(
+          { error: '먼저 비밀번호를 변경하세요', code: 'PASSWORD_CHANGE_REQUIRED' },
+          { status: 403 }
         );
       }
 

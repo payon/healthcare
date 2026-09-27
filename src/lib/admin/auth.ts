@@ -25,6 +25,11 @@ export const SECURE_COOKIE_NAME = '__Host-admin_session';
 export const COOKIE_NAME = 'admin_session';
 const EXPIRY = '8h';
 const MAX_AGE = 8 * 60 * 60;
+// Sliding window: extend while active, but never beyond 24h absolute lifetime.
+const SLIDING_THRESHOLD_MS = 4 * 60 * 60 * 1000;
+const ABSOLUTE_LIFETIME_MS = 24 * 60 * 60 * 1000;
+// Max concurrent sessions per user (oldest evicted on new login).
+const MAX_SESSIONS_PER_USER = 5;
 
 export function isSecureRequest(request: Request): boolean {
   const forwarded = request.headers.get('x-forwarded-proto');
@@ -75,6 +80,17 @@ export async function createSession(userId: string, role: Role): Promise<string>
     },
   });
 
+  // Enforce per-user session cap (evict oldest beyond the cap)
+  const sessions = await db.adminSession.findMany({
+    where: { userId },
+    select: { id: true },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (sessions.length > MAX_SESSIONS_PER_USER) {
+    const evict = sessions.slice(MAX_SESSIONS_PER_USER).map((s) => s.id);
+    await db.adminSession.deleteMany({ where: { id: { in: evict } } }).catch(() => {});
+  }
+
   return token;
 }
 
@@ -85,15 +101,26 @@ export async function verifySession(token: string): Promise<SessionPayload | nul
     // Check session exists in DB and is not expired
     const session = await db.adminSession.findUnique({
       where: { token },
-      select: { expiresAt: true },
+      select: { expiresAt: true, createdAt: true },
     });
 
-    if (!session || session.expiresAt < new Date()) {
+    const now = new Date();
+    if (!session || session.expiresAt < now) {
       // Clean up expired session
       if (session) {
         await db.adminSession.delete({ where: { token } }).catch(() => {});
       }
       return null;
+    }
+
+    // Sliding expiration: while the user is active, push expiry forward,
+    // capped by the absolute lifetime since session creation.
+    const absoluteEnd = session.createdAt.getTime() + ABSOLUTE_LIFETIME_MS;
+    if (session.expiresAt.getTime() - now.getTime() < SLIDING_THRESHOLD_MS && now.getTime() < absoluteEnd) {
+      const next = new Date(Math.min(now.getTime() + MAX_AGE * 1000, absoluteEnd));
+      await db.adminSession
+        .update({ where: { token }, data: { expiresAt: next } })
+        .catch(() => {});
     }
 
     return payload;

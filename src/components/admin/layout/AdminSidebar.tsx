@@ -10,6 +10,7 @@ import {
   AppWindow,
   Users,
   ScrollText,
+  ShieldCheck,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
@@ -66,6 +67,12 @@ const navItems: NavItem[] = [
     href: '/admin/audit-logs',
     icon: ScrollText,
     requiredPermission: 'audit:read',
+  },
+  {
+    label: '보안 설정',
+    href: '/admin/security',
+    icon: ShieldCheck,
+    requiredPermission: 'content:read',
   },
   {
     label: '설정',

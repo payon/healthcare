@@ -94,7 +94,25 @@ export function buildManifest(name: string, shortName: string, icons: PwaIconSta
         type: 'image/png',
         purpose: i.purpose === 'maskable' ? 'maskable' : 'any',
       })),
-    screenshots: [],
+    screenshots: [
+      {
+        src: '/kiosk-images/equipment.png',
+        sizes: '1344x768',
+        type: 'image/png',
+        form_factor: 'wide',
+      },
+      {
+        src: '/kiosk-images/location.png',
+        sizes: '1344x768',
+        type: 'image/png',
+        form_factor: 'wide',
+      },
+    ],
+    shortcuts: [
+      { name: '장비 소개', url: '/?screen=equipment-intro' },
+      { name: '설치 위치', url: '/?screen=location' },
+      { name: '측정 안내', url: '/?screen=measurement-mode' },
+    ],
     prefer_related_applications: false,
   };
 }

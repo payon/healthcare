@@ -2,14 +2,65 @@
 
 import { useCurrentUser } from '@/hooks/admin/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Settings, Shield, Monitor, Clock } from 'lucide-react';
+import { Settings, Shield, Monitor, Clock, Loader2, Volume2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function SettingsPage() {
   const { data: user } = useCurrentUser();
   const router = useRouter();
+  const [ttsRate, setTtsRate] = useState('0.85');
+  const [ttsVoiceURI, setTtsVoiceURI] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const rows = (data?.settings ?? []) as Array<{ key: string; value: string }>;
+        for (const r of rows) {
+          if (r.key === 'tts.rate') setTtsRate(r.value || '0.85');
+          if (r.key === 'tts.voiceURI') setTtsVoiceURI(r.value);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSettings(false));
+  }, []);
+
+  const saveTts = async () => {
+    const rate = parseFloat(ttsRate);
+    if (!Number.isFinite(rate) || rate < 0.5 || rate > 1.5) {
+      toast.error('속도는 0.5~1.5 사이로 입력하세요');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: [
+            { key: 'tts.rate', value: String(rate) },
+            { key: 'tts.voiceURI', value: ttsVoiceURI.trim() },
+          ],
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '저장에 실패했습니다');
+      toast.success('TTS 설정이 저장되었습니다 (키오스크에 수 초 내 반영)');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '저장에 실패했습니다');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Only superadmin can access settings
   if (user && user.role !== 'superadmin') {
@@ -57,7 +108,7 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-1">
               <p className="text-sm text-slate-500">데이터베이스</p>
-              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">SQLite (Prisma ORM)</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">PostgreSQL (Prisma ORM)</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-slate-500">현재 사용자</p>
@@ -88,7 +139,7 @@ export default function SettingsPage() {
           <Separator />
           <div className="space-y-1">
             <p className="text-sm text-slate-500">세션 만료 시간</p>
-            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">8시간</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">8시간 (활동 시 연장, 최대 24시간) · 기기당 5세션</p>
           </div>
           <Separator />
           <div className="space-y-1">
@@ -119,9 +170,53 @@ export default function SettingsPage() {
           <div className="space-y-1">
             <p className="text-sm text-slate-500">콘텐츠 새로고침 주기</p>
             <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-              30초
+              5초
             </p>
             <p className="text-xs text-slate-400">키오스크에서 콘텐츠를 자동 새로고침하는 주기입니다</p>
+          </div>
+          <Separator />
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4 text-slate-500" />
+              <p className="text-sm font-medium text-slate-900 dark:text-slate-100">음성 안내 속도</p>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="number"
+                min={0.5}
+                max={1.5}
+                step={0.05}
+                value={ttsRate}
+                disabled={loadingSettings}
+                onChange={(e) => setTtsRate(e.target.value)}
+                className="w-32"
+              />
+              <span className="self-center text-xs text-slate-400">0.5 (느리게) ~ 1.5 (빠르게)</span>
+            </div>
+          </div>
+          <Separator />
+          <div className="space-y-2">
+            <Label htmlFor="tts-voice">선호 음성 (voiceURI, 비우면 한국어 자동 선택)</Label>
+            <Input
+              id="tts-voice"
+              placeholder="예: Google 한국의"
+              value={ttsVoiceURI}
+              disabled={loadingSettings}
+              onChange={(e) => setTtsVoiceURI(e.target.value)}
+            />
+            <p className="text-xs text-slate-400">
+              키오스크 브라우저의 음성 목록에서 정확히 일치하는 항목을 사용합니다
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              onClick={saveTts}
+              disabled={saving || loadingSettings}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              TTS 설정 저장
+            </Button>
           </div>
           <Separator />
           <div className="space-y-1">
@@ -156,7 +251,7 @@ export default function SettingsPage() {
               { role: '최고관리자', desc: '모든 권한', variant: 'destructive' as const },
               { role: '관리자', desc: '설정 수정 제외 모든 권한', variant: 'default' as const },
               { role: '편집자', desc: '콘텐츠, 측정 항목, 이미지 관리', variant: 'secondary' as const },
-              { role: '조회자', desc: '콘텐츠, 측정 항목, 감사 로그 조회', variant: 'outline' as const },
+              { role: '조회자', desc: '콘텐츠, 측정 항목 조회', variant: 'outline' as const },
             ].map((item) => (
               <div key={item.role} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
