@@ -33,6 +33,21 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local databases (never commit: credentials/content)
+db/*.db*
+db/*.db-journal
+db/*.db-wal
+db/*.db-shm
+
+# generated prisma clients (regenerate via prisma generate)
+src/generated/
+
+# local source archives
+biogram-*.tar.gz
+
+# runtime uploads (served from disk, not source)
+public/admin-uploads/
+
 # vercel
 .vercel
 

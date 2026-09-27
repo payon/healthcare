@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Fingerprint, QrCode, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { useKioskContent } from '@/hooks/use-kiosk-content';
 
 interface LoginStep {
   title: string;
@@ -71,10 +72,15 @@ const itemVariants = {
 };
 
 export function LoginGuide() {
+  const { getContent } = useKioskContent();
+  const content = getContent('login');
+
   return (
     <ContentLayout
-      title="로그인 안내"
+      title={content?.title || '로그인 안내'}
       notice="로그인은 실제 Biogram MINI 장비에서 진행됩니다."
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
     >
       <motion.div
         variants={containerVariants}
@@ -89,7 +95,7 @@ export function LoginGuide() {
           transition={{ duration: 0.4 }}
           className="text-lg leading-relaxed text-muted-foreground"
         >
-          회원가입 완료 후, 다음 방법으로 로그인할 수 있습니다.
+          {content?.body || '회원가입 완료 후, 다음 방법으로 로그인할 수 있습니다.'}
         </motion.p>
 
         {/* Login Method Cards */}

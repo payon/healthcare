@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -16,9 +16,49 @@ model KioskContent {
   body      String
   imageUrl  String?
   qrCodeUrl String?
+  // Screen theme (admin-editable, applied live on kiosk via 5s polling).
+  // backgroundColor: hex like #0d9488 (empty = screen default).
+  // backgroundImageUrl: cover image URL (empty = none). Takes precedence
+  // over backgroundColor when set.
+  backgroundColor    String  @default("")
+  backgroundImageUrl String?
+  // Location map image (location screen "찾아오는 길 지도" block).
+  // Admin uploads a map capture; kiosk renders it large and senior-friendly.
+  mapImageUrl String?
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
   sections  ContentSection[]
+}
+
+// PWA install icons per slot (admin-manageable). isDefault → bundled
+// /pwa-icon-*.png files are served; otherwise the uploaded URL is used.
+model PwaIcon {
+  id        String   @id @default(cuid())
+  slot      String   @unique // icon-192, icon-512, maskable-512, apple-180
+  url       String
+  size      Int
+  purpose   String   @default("any") // any | maskable
+  isDefault Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+// Uploaded image library with responsive variants. Variants are generated
+// at upload time (w640/w1280/w1920, never upscaled) so each kiosk
+// environment (mobile 360px → 32" 1080p+) loads a sharp but right-sized file.
+model UploadedImage {
+  id         String   @id @default(cuid())
+  url        String   // largest variant (canonical link stored in content fields)
+  filename   String
+  width      Int      @default(0)
+  height     Int      @default(0)
+  mimeType   String   @default("")
+  size       Int      @default(0)
+  category   String   @default("general")
+  variants   String   @default("[]") // JSON: [{url, width}]
+  uploadedBy String?
+  createdAt  DateTime @default(now())
+
+  @@index([category, createdAt])
 }
 
 model KioskLog {

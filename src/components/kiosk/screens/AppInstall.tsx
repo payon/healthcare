@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Download, QrCode, Info } from 'lucide-react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { useKioskContent, useScreenSteps, stepText } from '@/hooks/use-kiosk-content';
 
 const storeSteps = [
   '휴대폰 앱스토어를 엽니다.',
@@ -26,8 +29,21 @@ const itemVariants = {
 };
 
 export function AppInstall() {
+  const { getContent } = useKioskContent();
+  const content = getContent('app-install');
+
+  const title = content?.title || '앱 설치 안내';
+  const intro = content?.body || '바이오그램 앱을 설치하면 측정 결과를 모바일에서 확인할 수 있습니다.';
+  const [qrFailed, setQrFailed] = useState(false);
+  const dbSteps = useScreenSteps('app-install');
+  const installSteps = dbSteps ? dbSteps.map(stepText) : storeSteps;
+
   return (
-    <ContentLayout title="앱 설치 안내">
+    <ContentLayout
+      title={title}
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
+    >
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -41,7 +57,7 @@ export function AppInstall() {
           transition={{ duration: 0.4 }}
           className="text-lg leading-relaxed text-muted-foreground"
         >
-          바이오그램 앱을 설치하면 측정 결과를 모바일에서 확인할 수 있습니다.
+          {intro}
         </motion.p>
 
         {/* Method 1: App Store */}
@@ -54,7 +70,7 @@ export function AppInstall() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {storeSteps.map((step, index) => (
+              {installSteps.map((step, index) => (
                 <div key={index} className="flex items-start gap-4">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                     {index + 1}
@@ -77,13 +93,24 @@ export function AppInstall() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center gap-6">
-                {/* QR placeholder */}
-                <div className="flex h-[200px] w-[200px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted">
-                  <QrCode className="h-12 w-12 text-muted-foreground/50" />
-                  <span className="mt-2 text-base text-muted-foreground">
-                    QR 코드
-                  </span>
-                </div>
+                {/* QR: admin qrCodeUrl → real QR image, else placeholder */}
+                {content?.qrCodeUrl && !qrFailed ? (
+                  <Image
+                    src={content.qrCodeUrl}
+                    alt="앱 설치 QR 코드"
+                    width={200}
+                    height={200}
+                    className="h-[200px] w-[200px] rounded-xl border object-contain"
+                    onError={() => setQrFailed(true)}
+                  />
+                ) : (
+                  <div className="flex h-[200px] w-[200px] flex-col items-center justify-center rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted">
+                    <QrCode className="h-12 w-12 text-muted-foreground/50" />
+                    <span className="mt-2 text-base text-muted-foreground">
+                      QR 코드
+                    </span>
+                  </div>
+                )}
                 <p className="text-center text-lg leading-relaxed text-muted-foreground">
                   화면의 QR 코드를 휴대폰 카메라로 촬영하여 앱을 설치합니다.
                 </p>

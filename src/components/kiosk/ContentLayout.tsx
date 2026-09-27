@@ -2,6 +2,7 @@
 
 import { type ReactNode } from 'react';
 import { useKioskStore } from '@/store/kiosk-store';
+import { themeStyle } from '@/lib/kiosk-theme';
 import { KioskHeader } from './KioskHeader';
 import { KioskFooter } from './KioskFooter';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -12,15 +13,20 @@ interface ContentLayoutProps {
   title?: string;
   children: ReactNode;
   notice?: string;
+  backgroundColor?: string | null;
+  backgroundImageUrl?: string | null;
 }
 
-export function ContentLayout({ title, children, notice }: ContentLayoutProps) {
+export function ContentLayout({ title, children, notice, backgroundColor, backgroundImageUrl }: ContentLayoutProps) {
   const { isMobile } = useKioskStore();
   // autoSpeak 없음 = 자동 읽기 안 함, replay 버튼만 사용
   const { speakIntro, speakFull } = useTTS();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div
+      className="flex min-h-screen flex-col bg-background"
+      style={themeStyle(backgroundColor, backgroundImageUrl)}
+    >
       <KioskHeader />
       <AccessibilityToolbar onReplay={speakIntro} onReplayFull={speakFull} />
 

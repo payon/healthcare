@@ -86,3 +86,46 @@ export const PUT = withAuth('content:write', async (request, context, auth) => {
     );
   }
 });
+
+// DELETE /api/admin/content/[screenId]/sections/[key] - Delete a section
+export const DELETE = withAuth('content:write', async (_request, context, auth) => {
+  try {
+    const { screenId, key } = await context.params;
+
+    const content = await db.kioskContent.findUnique({ where: { section: screenId } });
+    if (!content) {
+      return NextResponse.json(
+        { error: '화면 콘텐츠를 찾을 수 없습니다' },
+        { status: 404 }
+      );
+    }
+
+    const existing = await db.contentSection.findUnique({
+      where: { contentId_sectionKey: { contentId: content.id, sectionKey: key } },
+    });
+    if (!existing) {
+      return NextResponse.json(
+        { error: '섹션을 찾을 수 없습니다' },
+        { status: 404 }
+      );
+    }
+
+    await db.contentSection.delete({ where: { id: existing.id } });
+
+    await logAudit({
+      userId: auth.userId,
+      action: 'delete',
+      entity: 'ContentSection',
+      entityId: existing.id,
+      before: { screenId, sectionKey: key, title: existing.title },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Delete section error:', error);
+    return NextResponse.json(
+      { error: '섹션 삭제 중 오류가 발생했습니다' },
+      { status: 500 }
+    );
+  }
+});

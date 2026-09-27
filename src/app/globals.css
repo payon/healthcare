@@ -378,3 +378,14 @@
 .tts-speaking {
   animation: tts-pulse 1.5s ease-in-out infinite;
 }
+
+/* 애니메이션 failsafe: enter 애니가 2.5초 안에 끝나지 않으면(엔진 stall 등)
+   page.tsx 워치독이 이 클래스를 붙여 콘텐츠를 강제로 보이게 한다.
+   !important로 framer-motion 인라인 스타일을 덮어쓴다. */
+.anim-kill,
+.anim-kill * {
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}

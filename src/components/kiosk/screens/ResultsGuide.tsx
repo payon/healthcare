@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Monitor, Smartphone, Send, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { useKioskContent } from '@/hooks/use-kiosk-content';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -25,8 +26,15 @@ const subSteps = [
 ];
 
 export function ResultsGuide() {
+  const { getContent } = useKioskContent();
+  const content = getContent('results');
+
   return (
-    <ContentLayout title="결과 확인 안내">
+    <ContentLayout
+      title={content?.title || '결과 확인 안내'}
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
+    >
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -40,7 +48,7 @@ export function ResultsGuide() {
           transition={{ duration: 0.4 }}
           className="text-lg leading-relaxed text-muted-foreground"
         >
-          측정 완료 후, 다음 방법으로 결과를 확인할 수 있습니다.
+          {content?.body || '측정 완료 후, 다음 방법으로 결과를 확인할 수 있습니다.'}
         </motion.p>
 
         {/* Card 1: 장비 화면에서 확인 */}

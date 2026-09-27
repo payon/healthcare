@@ -4,6 +4,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { useKioskStore, type Screen } from '@/store/kiosk-store';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTTS } from '@/hooks/use-tts';
+import { KioskErrorBoundary } from '@/components/kiosk/KioskErrorBoundary';
 import { StandbyScreen } from '@/components/kiosk/StandbyScreen';
 import { MainMenu } from '@/components/kiosk/MainMenu';
 import { EquipmentIntro } from '@/components/kiosk/screens/EquipmentIntro';
@@ -90,6 +91,7 @@ export default function Home() {
 
   // zoom + high-contrast: useEffect로 적용하여 hydration mismatch 방지
   const containerRef = useRef<HTMLDivElement>(null);
+  const enterDoneRef = useRef(true);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -99,8 +101,35 @@ export default function Home() {
     el.classList.toggle('bg-background', currentScreen !== 'standby');
   }, [fontSize, highContrast, currentScreen]);
 
+  // 애니메이션 failsafe: enter가 2.5초 안에 끝나지 않으면 강제 표시 + 원인 로그.
+  // (모바일/키오스크에서 rAF 스로틀 등으로 화면이 opacity:0에 갇히는 유형 대응)
+  useEffect(() => {
+    enterDoneRef.current = false;
+    containerRef.current?.classList.remove('anim-kill');
+    const t = setTimeout(() => {
+      if (!enterDoneRef.current) {
+        containerRef.current?.classList.add('anim-kill');
+        const state = useKioskStore.getState();
+        fetch('/api/logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId: state.sessionId || 'standby',
+            eventType: 'error',
+            screen: state.currentScreen,
+            detail: 'anim-failsafe: enter animation did not complete',
+          }),
+        }).catch(() => {});
+      }
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [currentScreen]);
+
   return (
-    <AnimatePresence mode="wait">
+    // NOTE: mode="wait"를 쓰지 않는다. exit 애니가 어떤 이유로든 끝나지 않으면
+    // 새 화면이 영원히 마운트되지 않아(음성은 나옴) 빈 화면에 갇힌다.
+    // sync 모드에서는 새 화면이 즉시 마운트되므로 해당 고장 유형이 구조적으로 불가하다.
+    <AnimatePresence>
       <motion.div
         ref={containerRef}
         key={currentScreen}
@@ -108,10 +137,16 @@ export default function Home() {
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={{ duration: 0.25, ease: 'easeInOut' }}
+        transition={{ duration: 0.15, ease: 'easeInOut' }}
+        onAnimationComplete={() => {
+          enterDoneRef.current = true;
+          containerRef.current?.classList.remove('anim-kill');
+        }}
         className="min-h-screen flex flex-col"
       >
-        <ScreenRenderer screen={currentScreen} />
+        <KioskErrorBoundary key={currentScreen}>
+          <ScreenRenderer screen={currentScreen} />
+        </KioskErrorBoundary>
       </motion.div>
     </AnimatePresence>
   );

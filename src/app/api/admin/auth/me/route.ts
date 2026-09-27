@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySession, COOKIE_NAME } from '@/lib/admin/auth';
+import { verifySession, getTokenFromCookies } from '@/lib/admin/auth';
 import { db } from '@/lib/db';
 
 /**
@@ -10,7 +10,7 @@ import { db } from '@/lib/db';
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get(COOKIE_NAME)?.value;
+    const token = getTokenFromCookies((name) => request.cookies.get(name)?.value);
 
     if (!token) {
       return NextResponse.json({ user: null });

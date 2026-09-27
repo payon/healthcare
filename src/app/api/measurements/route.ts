@@ -1,25 +1,21 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { safeParseJson } from '@/lib/admin/rate-limit';
 
 export async function GET() {
   try {
     const measurements = await db.measurementItem.findMany({
       where: { isActive: true },
       orderBy: { order: 'asc' },
-      include: {
-        equipment: {
-          orderBy: { order: 'asc' },
-        },
-      },
+      include: { equipment: { orderBy: { order: 'asc' } } },
     });
 
-    // Parse JSON fields in equipment
     const result = measurements.map((m) => ({
       ...m,
       equipment: m.equipment.map((eq) => ({
         ...eq,
-        preparationSteps: JSON.parse(eq.preparationSteps || '[]'),
-        precautions: JSON.parse(eq.precautions || '[]'),
+        preparationSteps: safeParseJson<string[]>(eq.preparationSteps || '[]', []),
+        precautions: safeParseJson<unknown[]>(eq.precautions || '[]', []),
       })),
     }));
 

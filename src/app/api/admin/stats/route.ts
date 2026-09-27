@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/admin/middleware';
 import { db } from '@/lib/db';
 
-// GET /api/admin/stats - Dashboard stats
-export const GET = withAuth('content:read', async (_request, _context, _auth) => {
+// GET /api/admin/stats - Dashboard stats (admin-only: exposes session/user aggregates)
+export const GET = withAuth('audit:read', async (_request, _context, _auth) => {
   try {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());

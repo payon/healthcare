@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { DbStepCards } from '@/components/kiosk/DbStepCards';
+import { useKioskContent, useScreenSteps } from '@/hooks/use-kiosk-content';
 
 interface NonMemberStep {
   icon: React.ElementType;
@@ -60,10 +62,16 @@ const itemVariants = {
 };
 
 export function NonMember() {
+  const { getContent } = useKioskContent();
+  const content = getContent('non-member');
+  const dbSteps = useScreenSteps('non-member');
+
   return (
     <ContentLayout
-      title="비회원 안내"
+      title={content?.title || '비회원 안내'}
       notice="비회원 측정은 실제 Biogram MINI 장비에서 진행됩니다."
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
     >
       <motion.div
         variants={containerVariants}
@@ -78,11 +86,14 @@ export function NonMember() {
           transition={{ duration: 0.4 }}
           className="text-lg leading-relaxed text-muted-foreground"
         >
-          앱 가입 없이도 비회원으로 체험 측정을 이용할 수 있습니다.
+          {content?.body || '앱 가입 없이도 비회원으로 체험 측정을 이용할 수 있습니다.'}
         </motion.p>
 
-        {/* Steps */}
-        {steps.map((step, index) => {
+        {/* Steps: admin sections win, hardcoded fallback otherwise */}
+        {dbSteps ? (
+          <DbStepCards steps={dbSteps} />
+        ) : (
+          steps.map((step, index) => {
           const Icon = step.icon;
           return (
             <motion.div key={step.title} variants={itemVariants}>
@@ -113,7 +124,8 @@ export function NonMember() {
               </Card>
             </motion.div>
           );
-        })}
+          })
+        )}
 
         {/* Warning Box */}
         <motion.div variants={itemVariants}>

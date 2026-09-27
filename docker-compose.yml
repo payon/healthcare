@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: biogram-db
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-biogram}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before 'docker compose up'}
+      POSTGRES_DB: ${POSTGRES_DB:-biogram}
+    volumes:
+      # NOTE: postgres:18+ requires the mount at /var/lib/postgresql
+      # (NOT .../data) — data lives in a versioned subdirectory.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-biogram} -d $${POSTGRES_DB:-biogram}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kiosk:
+    build: .
+    image: biogram-kiosk:latest
+    container_name: biogram-kiosk
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-3100}:3100"
+    environment:
+      PORT: 3100
+      NODE_ENV: production
+      # PostgreSQL (same credentials as db service above)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-biogram}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-biogram}?schema=public
+      # REQUIRED: min 32 chars. Export before up, e.g.:
+      #   export JWT_SECRET=$(openssl rand -base64 48)
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET before 'docker compose up'}
+      UPLOAD_DIR: /data/uploads
+      # First boot only: set SEED_ON_START=true + SEED_ADMIN_* to create the
+      # admin account, then set SEED_ON_START=false and recreate.
+      SEED_ON_START: ${SEED_ON_START:-false}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@biogram.co.kr}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-최관리}
+    volumes:
+      - kiosk-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3100/api/content').then(r=>{if(!r.ok)process.exit(1)})\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  kiosk-data:
+  pgdata:

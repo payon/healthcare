@@ -15,6 +15,8 @@ import {
   ArrowRightCircle,
 } from 'lucide-react';
 import { useKioskStore, useProgress, type Screen } from '@/store/kiosk-store';
+import { useKioskContent } from '@/hooks/use-kiosk-content';
+import { themeStyle } from '@/lib/kiosk-theme';
 import { KioskHeader } from './KioskHeader';
 import { KioskFooter } from './KioskFooter';
 import { AccessibilityToolbar } from './AccessibilityToolbar';
@@ -195,9 +197,15 @@ function NoticeBox() {
 export function MainMenu() {
   const { navigateTo } = useKioskStore();
   const { speakIntro, speakFull } = useTTS();
+  const { getContent } = useKioskContent();
+  const content = getContent('main');
+  const heading = content?.title || '무엇을 도와드릴까요?';
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div
+      className="flex min-h-screen flex-col bg-background"
+      style={themeStyle(content?.backgroundColor, content?.backgroundImageUrl)}
+    >
       {/* Desktop-only header (mobile has bottom nav instead) */}
       <KioskHeader />
 
@@ -210,7 +218,7 @@ export function MainMenu() {
         <div className="mx-auto max-w-4xl">
           {/* Mobile: accessibility + progress at top */}
           <div className="mb-3 flex items-center justify-between md:hidden">
-            <span className="text-lg font-bold">무엇을 도와드릴까요?</span>
+            <span className="text-lg font-bold">{heading}</span>
             <AccessibilityToolbar onReplay={speakIntro} onReplayFull={speakFull} />
           </div>
 
@@ -227,7 +235,7 @@ export function MainMenu() {
               transition={{ duration: 0.4 }}
               className="mb-4 text-2xl font-bold md:text-3xl"
             >
-              무엇을 도와드릴까요?
+              {heading}
             </motion.h2>
             <ProgressBar />
           </div>

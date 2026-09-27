@@ -58,7 +58,7 @@ const roleLabel: Record<string, string> = {
 const createUserSchema = z.object({
   name: z.string().min(1, '이름을 입력하세요').max(50),
   email: z.string().email('유효한 이메일을 입력하세요'),
-  password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다'),
+  password: z.string().min(12, '비밀번호는 12자 이상이어야 합니다'),
   role: z.enum(['superadmin', 'admin', 'editor', 'viewer']).default('editor'),
 });
 
@@ -69,7 +69,7 @@ const editUserSchema = z.object({
   email: z.string().email('유효한 이메일을 입력하세요'),
   role: z.enum(['superadmin', 'admin', 'editor', 'viewer']),
   isActive: z.boolean(),
-  password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다').or(z.literal('')).optional(),
+  password: z.string().min(12, '비밀번호는 12자 이상이어야 합니다').or(z.literal('')).optional(),
 });
 
 type EditUserForm = z.infer<typeof editUserSchema>;
@@ -101,7 +101,8 @@ export default function UsersPage() {
     reset: resetC,
     formState: { errors: errorsC },
   } = useForm<CreateUserForm>({
-    resolver: zodResolver(createUserSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(createUserSchema as any),
     defaultValues: { name: '', email: '', password: '', role: 'editor' },
   });
 
@@ -125,7 +126,8 @@ export default function UsersPage() {
     watch: watchE,
     formState: { errors: errorsE },
   } = useForm<EditUserForm>({
-    resolver: zodResolver(editUserSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(editUserSchema as any),
   });
 
   const isActiveWatch = watchE('isActive');
@@ -149,7 +151,7 @@ export default function UsersPage() {
       role: formData.role,
       isActive: formData.isActive,
     };
-    if (formData.password && formData.password.length >= 8) {
+    if (formData.password && formData.password.length >= 12) {
       payload.password = formData.password;
     }
     updateMutation.mutate(payload, {
@@ -432,7 +434,7 @@ export default function UsersPage() {
                 type="checkbox"
                 id="edit-active"
                 checked={isActiveWatch}
-                onChange={(e) => registerE('isActive').onChange({ target: { value: e.target.checked } } as React.ChangeEvent<HTMLInputElement>)}
+                onChange={(e) => registerE('isActive').onChange({ target: { value: e.target.checked } } as unknown as React.ChangeEvent<HTMLInputElement>)}
                 className="h-4 w-4 rounded border-slate-300"
               />
             </div>

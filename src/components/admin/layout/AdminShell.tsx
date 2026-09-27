@@ -1,6 +1,7 @@
 'use client';
 
-import { usePathname, type ReactNode } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { AdminSidebar } from '@/components/admin/layout/AdminSidebar';
 import { AdminHeader } from '@/components/admin/layout/AdminHeader';
 

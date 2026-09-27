@@ -50,7 +50,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   viewer: [
     'content:read',
     'measurements:read',
-    'audit:read',
   ],
 };
 

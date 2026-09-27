@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/admin/middleware';
 import { db } from '@/lib/db';
+import { safeParseJson } from '@/lib/admin/rate-limit';
 
 // GET /api/admin/audit-logs - Paginated audit logs with filters
 export const GET = withAuth('audit:read', async (request, _context, _auth) => {
@@ -48,10 +49,10 @@ export const GET = withAuth('audit:read', async (request, _context, _auth) => {
       db.auditLog.count({ where }),
     ]);
 
-    // Parse changes JSON
+    // Parse changes JSON (corrupt rows must not crash the endpoint)
     const parsed = logs.map((log) => ({
       ...log,
-      changes: JSON.parse(log.changes) as Record<string, unknown>,
+      changes: safeParseJson<Record<string, unknown>>(log.changes, {}),
     }));
 
     return NextResponse.json({

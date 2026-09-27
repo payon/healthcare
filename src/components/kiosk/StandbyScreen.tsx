@@ -3,13 +3,20 @@
 import { motion } from 'framer-motion';
 import { Activity, Volume2, VolumeX, Eye } from 'lucide-react';
 import { useKioskStore } from '@/store/kiosk-store';
+import { useKioskContent } from '@/hooks/use-kiosk-content';
+import { themeStyle } from '@/lib/kiosk-theme';
 
 export function StandbyScreen() {
   const { startSession, ttsEnabled, setTtsEnabled, highContrast, setHighContrast } =
     useKioskStore();
+  const { getContent } = useKioskContent();
+  const content = getContent('standby');
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-teal-500 via-emerald-600 to-green-800">
+    <div
+      className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-teal-500 via-emerald-600 to-green-800"
+      style={themeStyle(content?.backgroundColor, content?.backgroundImageUrl)}
+    >
       {/* Decorative background circles */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-white/5" />
@@ -61,7 +68,7 @@ export function StandbyScreen() {
           transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
           className="text-center text-5xl font-extrabold tracking-tight text-white md:text-7xl"
         >
-          Biogram MINI
+          {content?.title || 'Biogram MINI'}
         </motion.h1>
 
         {/* Subtitle */}
@@ -71,7 +78,7 @@ export function StandbyScreen() {
           transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
           className="text-center text-xl text-white/80 md:text-2xl"
         >
-          헬스케어 장비 이용 교육
+          {content?.body || '헬스케어 장비 이용 교육'}
         </motion.p>
 
         {/* Start button */}

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   Brain,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { ResponsiveImage } from '@/components/kiosk/ResponsiveImage';
 import { useKioskContent, type MeasurementData } from '@/hooks/use-kiosk-content';
 
 // ── Hardcoded fallback data ──
@@ -112,6 +112,9 @@ export function EquipmentIntro() {
     ? content.imageUrl
     : '/kiosk-images/equipment.png';
 
+  // Admin-editable title/body/theme (fall back to hardcoded defaults)
+  const title = content?.title || '장비 소개';
+
   // Determine description: API custom body or default
   const description = hasApiContent && content.body
     ? content.body
@@ -122,8 +125,10 @@ export function EquipmentIntro() {
 
   return (
     <ContentLayout
-      title="장비 소개"
+      title={title}
       notice="모든 측정은 실제 Biogram MINI 장비에서 진행됩니다."
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
     >
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -131,11 +136,13 @@ export function EquipmentIntro() {
         transition={{ duration: 0.5 }}
         className="mb-6 overflow-hidden rounded-2xl"
       >
-        <Image
+        <ResponsiveImage
           src={imageSrc}
+          fallbackSrc="/kiosk-images/equipment.png"
           alt="Biogram MINI 헬스케어 장비"
           width={1344}
           height={768}
+          sizes="100vw"
           className="h-auto w-full object-cover"
           priority
         />

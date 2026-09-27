@@ -13,7 +13,12 @@
 	}
 
 	handle {
-		reverse_proxy localhost:3000 {
+		# NOTE: 평문 :81은 개발/LAN 테스트용. 운영에서는 TLS 호스트로 전환하고
+		# 관리자 로그인 평문 전송을 금지할 것 (예: biogram.example.com { reverse_proxy ... }).
+		header X-Frame-Options DENY
+		header X-Content-Type-Options nosniff
+		header Referrer-Policy strict-origin-when-cross-origin
+		reverse_proxy localhost:3100 {
 			header_up Host {host}
 			header_up X-Forwarded-For {remote_host}
 			header_up X-Forwarded-Proto {scheme}

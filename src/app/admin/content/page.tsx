@@ -75,9 +75,26 @@ export default function ContentListPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
+              <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-2">
                 {content.title}
               </p>
+              <div className="mb-3 flex items-center gap-2 text-xs text-slate-400">
+                <code className="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800">
+                  {content.section}
+                </code>
+                {content.backgroundColor ? (
+                  <span className="flex items-center gap-1">
+                    <span
+                      className="inline-block h-3 w-3 rounded-full border border-slate-300"
+                      style={{ backgroundColor: content.backgroundColor }}
+                    />
+                    {content.backgroundColor}
+                  </span>
+                ) : null}
+                {content.backgroundImageUrl ? (
+                  <span className="truncate">배경이미지 설정됨</span>
+                ) : null}
+              </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-400">
                   {formatDistanceToNow(new Date(content.updatedAt), {

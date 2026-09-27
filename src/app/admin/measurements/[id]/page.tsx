@@ -101,7 +101,8 @@ export default function MeasurementDetailPage() {
     watch: watchM,
     formState: { errors: errorsM, isDirty: isDirtyM },
   } = useForm<MeasurementFormValues>({
-    resolver: zodResolver(measurementFormSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(measurementFormSchema as any),
     defaultValues: {
       key: '',
       name: '',
@@ -165,7 +166,8 @@ export default function MeasurementDetailPage() {
     reset: resetE,
     formState: { errors: errorsE },
   } = useForm<EquipmentFormValues>({
-    resolver: zodResolver(equipmentFormSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(equipmentFormSchema as any),
     defaultValues: { name: '', description: '', order: 0 },
   });
 
@@ -315,7 +317,7 @@ export default function MeasurementDetailPage() {
                   id="isActive"
                   checked={isActiveWatch}
                   onCheckedChange={(checked) => {
-                    registerM('isActive').onChange({ target: { value: checked } } as React.ChangeEvent<HTMLInputElement>);
+                    registerM('isActive').onChange({ target: { value: checked } } as unknown as React.ChangeEvent<HTMLInputElement>);
                   }}
                 />
                 <Label htmlFor="isActive">활성</Label>

@@ -33,23 +33,24 @@ export async function checkLockout(email: string): Promise<LockoutStatus> {
 export async function recordFailedAttempt(email: string): Promise<void> {
   const user = await db.adminUser.findUnique({
     where: { email },
-    select: { id: true, failedAttempts: true },
+    select: { id: true },
   });
 
   if (!user) return; // Don't reveal whether user exists
 
-  const newAttempts = user.failedAttempts + 1;
-  const lockUntil = newAttempts >= MAX_ATTEMPTS
-    ? new Date(Date.now() + LOCK_DURATION_MS)
-    : null;
-
-  await db.adminUser.update({
+  // Atomic increment to prevent race-condition lockout bypass
+  const updated = await db.adminUser.update({
     where: { id: user.id },
-    data: {
-      failedAttempts: newAttempts,
-      lockedUntil: lockUntil,
-    },
+    data: { failedAttempts: { increment: 1 } },
+    select: { failedAttempts: true },
   });
+
+  if (updated.failedAttempts >= MAX_ATTEMPTS) {
+    await db.adminUser.update({
+      where: { id: user.id },
+      data: { lockedUntil: new Date(Date.now() + LOCK_DURATION_MS) },
+    });
+  }
 }
 
 export async function resetFailedAttempts(userId: string): Promise<void> {

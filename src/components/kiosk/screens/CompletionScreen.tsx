@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, ArrowRight, MapPin, Check } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { useKioskContent, useScreenSteps, stepText } from '@/hooks/use-kiosk-content';
 import { useKioskStore } from '@/store/kiosk-store';
 
 const containerVariants = {
@@ -30,9 +31,17 @@ const summaryItems = [
 
 export function CompletionScreen() {
   const endSession = useKioskStore((state) => state.endSession);
+  const { getContent } = useKioskContent();
+  const content = getContent('completion');
+  const dbSteps = useScreenSteps('completion');
+  const summary = dbSteps ? dbSteps.map(stepText) : summaryItems;
 
   return (
-    <ContentLayout title="교육 완료">
+    <ContentLayout
+      title={content?.title || '교육 완료'}
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
+    >
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -58,7 +67,7 @@ export function CompletionScreen() {
                 학습 내용 요약
               </h3>
               <ul className="space-y-4">
-                {summaryItems.map((item, index) => (
+                {summary.map((item, index) => (
                   <li
                     key={index}
                     className="flex items-center gap-4 text-lg"

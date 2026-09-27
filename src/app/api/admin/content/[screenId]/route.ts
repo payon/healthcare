@@ -65,9 +65,15 @@ export const PUT = withAuth('content:write', async (request, context, auth) => {
 
     const data = parsed.data;
 
+    // backgroundColor is non-nullable in DB ("" = default); normalize null → ""
+    const { backgroundColor, ...rest } = data;
+    const updateData = {
+      ...rest,
+      ...(backgroundColor !== undefined ? { backgroundColor: backgroundColor ?? '' } : {}),
+    };
     const content = await db.kioskContent.update({
       where: { section: screenId },
-      data,
+      data: updateData,
       include: {
         sections: {
           orderBy: { order: 'asc' },
@@ -86,12 +92,18 @@ export const PUT = withAuth('content:write', async (request, context, auth) => {
         body: existing.body,
         imageUrl: existing.imageUrl,
         qrCodeUrl: existing.qrCodeUrl,
+        backgroundColor: existing.backgroundColor,
+        backgroundImageUrl: existing.backgroundImageUrl,
+        mapImageUrl: existing.mapImageUrl,
       },
       after: {
         title: content.title,
         body: content.body,
         imageUrl: content.imageUrl,
         qrCodeUrl: content.qrCodeUrl,
+        backgroundColor: content.backgroundColor,
+        backgroundImageUrl: content.backgroundImageUrl,
+        mapImageUrl: content.mapImageUrl,
       },
     });
 

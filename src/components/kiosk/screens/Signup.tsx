@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { UserPlus, Smartphone, Fingerprint, CheckCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { DbStepCards } from '@/components/kiosk/DbStepCards';
+import { useKioskContent, useScreenSteps } from '@/hooks/use-kiosk-content';
 
 interface SignupStep {
   icon: React.ElementType;
@@ -59,10 +61,16 @@ const itemVariants = {
 };
 
 export function Signup() {
+  const { getContent } = useKioskContent();
+  const content = getContent('signup');
+  const dbSteps = useScreenSteps('signup');
+
   return (
     <ContentLayout
-      title="회원가입 안내"
+      title={content?.title || '회원가입 안내'}
       notice="회원가입은 실제 Biogram MINI 장비에서 진행됩니다. 본 교육 키오스크에서는 가입 절차만 안내합니다."
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
     >
       <motion.div
         variants={containerVariants}
@@ -77,11 +85,15 @@ export function Signup() {
           transition={{ duration: 0.4 }}
           className="text-lg leading-relaxed text-muted-foreground"
         >
-          회원가입을 통해 측정 이력을 관리하고 건강 변화를 추적할 수 있습니다.
+          {content?.body ||
+            '회원가입을 통해 측정 이력을 관리하고 건강 변화를 추적할 수 있습니다.'}
         </motion.p>
 
-        {/* Steps */}
-        {steps.map((step, index) => {
+        {/* Steps: admin sections win, hardcoded fallback otherwise */}
+        {dbSteps ? (
+          <DbStepCards steps={dbSteps} />
+        ) : (
+          steps.map((step, index) => {
           const Icon = step.icon;
           return (
             <motion.div key={step.title} variants={itemVariants}>
@@ -112,7 +124,8 @@ export function Signup() {
               </Card>
             </motion.div>
           );
-        })}
+          })
+        )}
       </motion.div>
     </ContentLayout>
   );

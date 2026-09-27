@@ -6,17 +6,27 @@ const prisma = new PrismaClient();
 async function seed() {
   console.log('🌱 관리자 대시보드 초기 데이터 시드 시작...\n');
 
-  // 1. 최고 관리자 계정 생성
+  const isProd = process.env.NODE_ENV === 'production';
+
+  // 1. 최고 관리자 계정 생성 (프로덕션에서는 시크릿 필수, 기본값 금지)
   const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@biogram.co.kr';
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@1234';
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
   const adminName = process.env.SEED_ADMIN_NAME || '최관리';
+
+  if (!adminPassword) {
+    if (isProd) {
+      throw new Error('SEED_ADMIN_PASSWORD must be set in production. Refusing to seed default credentials.');
+    }
+    console.warn('⚠️ SEED_ADMIN_PASSWORD 미설정 — 개발용 임시 비밀번호를 사용합니다. 프로덕션에서 절대 사용하지 마세요.');
+  }
+  const effectivePassword = adminPassword || 'Admin@1234-dev-only';
 
   const existingAdmin = await prisma.adminUser.findUnique({ where: { email: adminEmail } });
   if (!existingAdmin) {
     const superadmin = await prisma.adminUser.create({
       data: {
         email: adminEmail,
-        passwordHash: await bcrypt.hash(adminPassword, 12),
+        passwordHash: await bcrypt.hash(effectivePassword, 12),
         name: adminName,
         role: 'superadmin',
         isActive: true,
@@ -27,7 +37,10 @@ async function seed() {
     console.log(`⏭️ 최고 관리자 이미 존재: ${adminEmail}`);
   }
 
-  // 데모 계정들
+  // 데모 계정들 (프로덕션에서는 생성하지 않음)
+  if (isProd) {
+    console.log('⏭️ 프로덕션: 데모 계정 생성 건너뜀');
+  } else {
   const demoUsers = [
     { email: 'operator@biogram.co.kr', name: '이운영', role: 'admin' },
     { email: 'editor@biogram.co.kr', name: '박수정', role: 'editor' },
@@ -49,6 +62,7 @@ async function seed() {
       console.log(`✅ 데모 계정 생성: ${u.email} (${u.role})`);
     }
   }
+  } // end non-prod demo block
 
   // 2. 6가지 측정 항목 시드
   const measurements = [
@@ -183,10 +197,7 @@ async function seed() {
   }
 
   console.log('\n🎉 시드 완료!');
-  console.log(`\n📋 관리자 로그인 정보:`);
-  console.log(`   이메일: ${adminEmail}`);
-  console.log(`   비밀번호: ${adminPassword}`);
-  console.log(`\n   데모 계정 비밀번호: Demo@1234`);
+  console.log(`\n📋 관리자: ${adminEmail} (비밀번호는 환경변수 참조, 로그에 출력하지 않음)`);
 
   await prisma.$disconnect();
 }

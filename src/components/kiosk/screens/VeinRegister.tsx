@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { Hand, Scan, RotateCcw, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { DbStepCards } from '@/components/kiosk/DbStepCards';
+import { useKioskContent, useScreenSteps } from '@/hooks/use-kiosk-content';
 
 interface VeinStep {
   icon: React.ElementType;
@@ -59,10 +61,16 @@ const itemVariants = {
 };
 
 export function VeinRegister() {
+  const { getContent } = useKioskContent();
+  const content = getContent('vein-register');
+  const dbSteps = useScreenSteps('vein-register');
+
   return (
     <ContentLayout
-      title="지정맥 등록 안내"
+      title={content?.title || '지정맥 등록 안내'}
       notice="지정맥 등록은 실제 Biogram MINI 장비에서 진행됩니다."
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
     >
       <motion.div
         variants={containerVariants}
@@ -77,11 +85,15 @@ export function VeinRegister() {
           transition={{ duration: 0.4 }}
           className="text-lg leading-relaxed text-muted-foreground"
         >
-          지정맥 등록은 손가락 정맥 패턴을 등록하여 간편 로그인을 위한 과정입니다.
+          {content?.body ||
+            '지정맥 등록은 손가락 정맥 패턴을 등록하여 간편 로그인을 위한 과정입니다.'}
         </motion.p>
 
-        {/* Steps */}
-        {steps.map((step, index) => {
+        {/* Steps: admin sections win, hardcoded fallback otherwise */}
+        {dbSteps ? (
+          <DbStepCards steps={dbSteps} />
+        ) : (
+          steps.map((step, index) => {
           const Icon = step.icon;
           return (
             <motion.div key={step.title} variants={itemVariants}>
@@ -112,7 +124,8 @@ export function VeinRegister() {
               </Card>
             </motion.div>
           );
-        })}
+          })
+        )}
 
         {/* Warning box */}
         <motion.div variants={itemVariants}>

@@ -21,6 +21,9 @@ export interface KioskContent {
   body: string;
   imageUrl: string | null;
   qrCodeUrl: string | null;
+  backgroundColor: string;
+  backgroundImageUrl: string | null;
+  mapImageUrl: string | null;
   updatedAt: string;
   createdAt: string;
   sections: ContentSection[];
@@ -51,8 +54,7 @@ export function useContentDetail(screenId: string) {
   });
 }
 
-export function useUpdateContent(screenId: string) {
-  const queryClient = useQueryClient();
+export function useUpdateContent(screenId: string) {  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: {
@@ -60,6 +62,9 @@ export function useUpdateContent(screenId: string) {
       body?: string;
       imageUrl?: string | null;
       qrCodeUrl?: string | null;
+      backgroundColor?: string | null;
+      backgroundImageUrl?: string | null;
+      mapImageUrl?: string | null;
     }) => {
       const res = await fetch(`/api/admin/content/${screenId}`, {
         method: 'PUT',
@@ -72,6 +77,73 @@ export function useUpdateContent(screenId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'content'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'content', screenId] });
+    },
+  });
+}
+
+export interface SectionInput {
+  sectionKey: string;
+  title: string;
+  body?: string;
+  imageUrl?: string | null;
+  order?: number;
+}
+
+function sectionUrl(screenId: string, key?: string) {
+  return key
+    ? `/api/admin/content/${screenId}/sections/${key}`
+    : `/api/admin/content/${screenId}/sections`;
+}
+
+export function useCreateSection(screenId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: SectionInput) => {
+      const res = await fetch(sectionUrl(screenId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || '섹션 생성에 실패했습니다');
+      return result.section as ContentSection;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'content', screenId] });
+    },
+  });
+}
+
+export function useUpdateSection(screenId: string, key: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { title?: string; body?: string; imageUrl?: string | null; order?: number }) => {
+      const res = await fetch(sectionUrl(screenId, key), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || '섹션 수정에 실패했습니다');
+      return result.section as ContentSection;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'content', screenId] });
+    },
+  });
+}
+
+export function useDeleteSection(screenId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (key: string) => {
+      const res = await fetch(sectionUrl(screenId, key), { method: 'DELETE' });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || '섹션 삭제에 실패했습니다');
+      return result as { success: boolean };
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'content', screenId] });
     },
   });

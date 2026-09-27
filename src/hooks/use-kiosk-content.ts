@@ -23,6 +23,9 @@ export interface KioskContentData {
   body: string;
   imageUrl: string | null;
   qrCodeUrl: string | null;
+  backgroundColor: string;
+  backgroundImageUrl: string | null;
+  mapImageUrl: string | null;
   sections: ContentSection[];
   updatedAt: string;
   createdAt: string;
@@ -112,4 +115,38 @@ export function useKioskContent() {
     isContentError: contentQuery.isError,
     isMeasurementError: measurementQuery.isError,
   };
+}
+
+export interface ScreenStep {
+  title: string;
+  lines: string[];
+  imageUrl: string | null;
+  order: number;
+}
+
+/**
+ * Admin-managed step list for a screen (ContentSection rows ordered by `order`).
+ * - Card-style steps: `title` + `lines` (body split by newline).
+ * - Plain string lists: use `text` (= lines joined, or title when body empty).
+ * Returns null when no sections exist → screens keep hardcoded fallbacks.
+ */
+export function useScreenSteps(section: string): ScreenStep[] | null {
+  const { contents } = useKioskContent();
+  const content = contents.find((c) => c.section === section);
+  if (!content || content.sections.length === 0) return null;
+  return [...content.sections]
+    .sort((a, b) => a.order - b.order)
+    .map((s) => ({
+      title: s.title,
+      lines: s.body
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean),
+      imageUrl: s.imageUrl,
+      order: s.order,
+    }));
+}
+
+export function stepText(step: ScreenStep): string {
+  return step.lines.length > 0 ? step.lines.join(' ') : step.title;
 }

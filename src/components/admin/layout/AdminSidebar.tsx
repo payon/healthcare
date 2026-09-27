@@ -7,6 +7,7 @@ import {
   FileText,
   Activity,
   Image,
+  AppWindow,
   Users,
   ScrollText,
   Settings,
@@ -46,6 +47,12 @@ const navItems: NavItem[] = [
     label: '이미지 관리',
     href: '/admin/images',
     icon: Image,
+    requiredPermission: 'images:upload',
+  },
+  {
+    label: 'PWA 아이콘',
+    href: '/admin/icons',
+    icon: AppWindow,
     requiredPermission: 'images:upload',
   },
   {

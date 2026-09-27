@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+db/*.db*
+*.db-journal
+*.db-wal
+*.db-shm
+.env
+dev.log
+server.log
+tool-results
+download
+.DS_Store

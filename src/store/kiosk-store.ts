@@ -43,6 +43,7 @@ interface KioskState {
 const IDLE_TIMEOUT_MS = 120_000;
 
 const generateId = () => {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
 };
 

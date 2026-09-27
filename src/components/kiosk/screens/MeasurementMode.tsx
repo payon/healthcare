@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ClipboardCheck, GitBranch, ChevronRight, Clock } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
-import { useKioskContent, type MeasurementData } from '@/hooks/use-kiosk-content';
+import { useKioskContent, useScreenSteps, stepText, type MeasurementData } from '@/hooks/use-kiosk-content';
 
 // ── Hardcoded fallback data ──
 
@@ -79,7 +79,10 @@ function renderFallbackFlowItems() {
 }
 
 export function MeasurementMode() {
-  const { measurements } = useKioskContent();
+  const { measurements, getContent } = useKioskContent();
+  const content = getContent('measurement-mode');
+  const dbSteps = useScreenSteps('measurement-mode');
+  const features = dbSteps ? dbSteps.map(stepText) : selectFeatures;
 
   // Use API data if available, otherwise fall back to hardcoded
   const hasApiMeasurements = measurements.length > 0;
@@ -89,8 +92,10 @@ export function MeasurementMode() {
 
   return (
     <ContentLayout
-      title="측정 모드 안내"
+      title={content?.title || '측정 모드 안내'}
       notice="측정은 실제 Biogram MINI 장비에서 진행됩니다. 장비 화면의 안내에 따라 측정을 시작하세요."
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
     >
       <motion.div
         variants={containerVariants}
@@ -105,7 +110,7 @@ export function MeasurementMode() {
           transition={{ duration: 0.4 }}
           className="text-lg leading-relaxed text-muted-foreground"
         >
-          Biogram MINI는 두 가지 측정 모드를 제공합니다.
+          {content?.body || 'Biogram MINI는 두 가지 측정 모드를 제공합니다.'}
         </motion.p>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -154,7 +159,7 @@ export function MeasurementMode() {
                 </div>
 
                 <ul className="space-y-3">
-                  {selectFeatures.map((feature, index) => (
+                  {features.map((feature, index) => (
                     <li
                       key={index}
                       className="flex items-start gap-3 text-base leading-relaxed text-muted-foreground"

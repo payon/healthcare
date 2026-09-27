@@ -1,7 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import {
   Brain,
   Ruler,
@@ -14,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ContentLayout } from '@/components/kiosk/ContentLayout';
+import { ResponsiveImage } from '@/components/kiosk/ResponsiveImage';
 import { useKioskContent, type MeasurementData, type EquipmentData } from '@/hooks/use-kiosk-content';
 
 // ── Hardcoded fallback data ──
@@ -157,14 +157,16 @@ function DynamicEquipmentCard({
             <h3 className="text-xl font-semibold">{equipment.name}</h3>
           </div>
 
-          {/* Equipment image if available */}
+          {/* Equipment image if available (SafeImage: bad admin URL never blanks the tree) */}
           {equipment.imageUrl && (
             <div className="mb-4 overflow-hidden rounded-lg">
-              <Image
+              <ResponsiveImage
                 src={equipment.imageUrl}
+                fallbackSrc="/kiosk-images/equipment.png"
                 alt={equipment.name}
-                width={600}
-                height={300}
+                width={800}
+                height={450}
+                sizes="(max-width: 768px) 100vw, 800px"
                 className="h-auto w-full object-cover"
               />
             </div>
@@ -297,15 +299,18 @@ function FallbackEquipmentCard({ equip }: { equip: EquipmentInfo }) {
 }
 
 export function MeasurementEquipment() {
-  const { measurements } = useKioskContent();
+  const { measurements, getContent } = useKioskContent();
+  const content = getContent('measurement-equipment');
 
   // Check if we have API measurements with equipment
   const hasApiData = measurements.length > 0 && measurements.some((m) => m.equipment.length > 0);
 
   return (
     <ContentLayout
-      title="측정 장비 안내"
+      title={content?.title || '측정 장비 안내'}
       notice="모든 측정은 실제 Biogram MINI 장비에서 진행됩니다. 장비의 음성 안내에 따라 진행해 주세요."
+      backgroundColor={content?.backgroundColor}
+      backgroundImageUrl={content?.backgroundImageUrl}
     >
       <motion.p
         initial={{ opacity: 0 }}
@@ -313,7 +318,7 @@ export function MeasurementEquipment() {
         transition={{ duration: 0.4 }}
         className="mb-6 text-lg leading-relaxed text-muted-foreground"
       >
-        각 측정 장비의 준비사항과 주의사항을 확인하세요.
+        {content?.body || '각 측정 장비의 준비사항과 주의사항을 확인하세요.'}
       </motion.p>
 
       <motion.div

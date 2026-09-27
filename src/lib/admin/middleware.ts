@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySession, COOKIE_NAME } from './auth';
+import { verifySession, getTokenFromCookies } from './auth';
+import { isOriginAllowed } from './csrf';
 import { hasPermission, type Role, type Permission } from './rbac';
 import { db } from '@/lib/db';
 
@@ -22,8 +23,16 @@ type AuthenticatedHandler = (
 export function withAuth(permission: Permission, handler: AuthenticatedHandler): RouteHandler {
   return async (request, context) => {
     try {
-      // Get token from cookie
-      const token = request.cookies.get(COOKIE_NAME)?.value;
+      // CSRF check for state-changing methods (defense-in-depth alongside SameSite)
+      if (!isOriginAllowed(request)) {
+        return NextResponse.json(
+          { error: '허용되지 않은 출처입니다', code: 'FORBIDDEN' },
+          { status: 403 }
+        );
+      }
+
+      // Get token from cookie (secure or plain name)
+      const token = getTokenFromCookies((name) => request.cookies.get(name)?.value);
 
       if (!token) {
         return NextResponse.json(
