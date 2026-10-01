@@ -17,6 +17,10 @@ services:
     restart: unless-stopped
     expose:
       - "5432"
+    # PC에서 DB 클라이언트(DBeaver 등)로 직접 붙을 때만 주석 해제.
+    # 전체 개방(0.0.0.0)은 금지 — UFW에서 접속 IP만 허용할 것 (firewall.md 참고).
+    #ports:
+    #  - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-biogram}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.cloud}
