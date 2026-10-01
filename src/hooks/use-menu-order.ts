@@ -24,7 +24,9 @@ export function useMenuOrder(): Screen[] {
       }
     },
     initialData: DEFAULT_MENU_ORDER,
-    staleTime: 3000,
+    // initialData와 함께 staleTime을 주면 마운트 직후 fetch가 안 일어나
+    // 기본 순서가 최대 5초간 표시되는 문제 → 즉시 갱신되게 0으로 둔다
+    staleTime: 0,
     gcTime: 5 * 60 * 1000,
     refetchInterval: 5000,
     refetchOnWindowFocus: true,
