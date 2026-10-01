@@ -38,6 +38,10 @@
   ],
   "exclude": [
     "node_modules",
-    "examples"
+    "examples",
+    // One-off SQLite->PG migration (run directly with bun; its sqlite-client
+    // is generated on demand and never committed, so Next build must not
+    // typecheck it — breaks fresh git clones otherwise)
+    "prisma/copy-sqlite-to-pg.ts"
   ]
 }
