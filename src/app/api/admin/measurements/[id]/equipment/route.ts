@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { withAuth } from '@/lib/admin/middleware';
 import { equipmentSchema } from '@/lib/admin/schemas';
 import { logAudit } from '@/lib/admin/audit';
+import { precautionToObjects, precautionToTexts, stepList } from '@/lib/equipment-normalize';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -28,11 +29,11 @@ export const GET = withAuth('measurements:read', async (_request, context, _auth
       orderBy: { order: 'asc' },
     });
 
-    // Parse JSON fields
+    // Parse JSON fields → 대화상자용 문자열 배열로 정규화 (구 시드 객체형 포함)
     const parsed = equipment.map((eq) => ({
       ...eq,
-      preparationSteps: JSON.parse(eq.preparationSteps) as string[],
-      precautions: JSON.parse(eq.precautions) as string[],
+      preparationSteps: stepList(eq.preparationSteps),
+      precautions: precautionToTexts(eq.precautions),
     }));
 
     return NextResponse.json({ equipment: parsed });
@@ -74,13 +75,14 @@ export const POST = withAuth('measurements:write', async (request, context, auth
 
     const data = parsed.data;
 
+    // 주의사항은 키오스크용 {level, text} 객체로 정규화 저장 (관리자 UI는 문자열)
     const equipment = await db.measurementEquipment.create({
       data: {
         measurementId: id,
         name: data.name,
         description: data.description,
-        preparationSteps: JSON.stringify(data.preparationSteps),
-        precautions: JSON.stringify(data.precautions),
+        preparationSteps: JSON.stringify(stepList(data.preparationSteps)),
+        precautions: JSON.stringify(precautionToObjects(data.precautions)),
         imageUrl: data.imageUrl ?? null,
         order: data.order,
       },

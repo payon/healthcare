@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { withAuth } from '@/lib/admin/middleware';
 import { equipmentSchema } from '@/lib/admin/schemas';
 import { logAudit } from '@/lib/admin/audit';
+import { precautionToObjects, stepList } from '@/lib/equipment-normalize';
 
 type RouteContext = { params: Promise<{ id: string; eqId: string }> };
 
@@ -39,8 +40,8 @@ export const PUT = withAuth('measurements:write', async (request, context, auth)
       data: {
         name: data.name,
         description: data.description,
-        preparationSteps: JSON.stringify(data.preparationSteps),
-        precautions: JSON.stringify(data.precautions),
+        preparationSteps: JSON.stringify(stepList(data.preparationSteps)),
+        precautions: JSON.stringify(precautionToObjects(data.precautions)),
         imageUrl: data.imageUrl ?? null,
         order: data.order,
       },

@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { withAuth } from '@/lib/admin/middleware';
 import { measurementSchema } from '@/lib/admin/schemas';
 import { logAudit } from '@/lib/admin/audit';
+import { precautionToTexts, stepList } from '@/lib/equipment-normalize';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -27,7 +28,17 @@ export const GET = withAuth('measurements:read', async (_request, context, _auth
       );
     }
 
-    return NextResponse.json({ measurement });
+    // 장비 JSON 필드는 대화상자용 문자열 배열로 정규화 (구 시드 객체형 포함)
+    const normalized = {
+      ...measurement,
+      equipment: measurement.equipment.map((eq) => ({
+        ...eq,
+        preparationSteps: stepList(eq.preparationSteps),
+        precautions: precautionToTexts(eq.precautions),
+      })),
+    };
+
+    return NextResponse.json({ measurement: normalized });
   } catch (error) {
     console.error('Get measurement error:', error);
     return NextResponse.json(

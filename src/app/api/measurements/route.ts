@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { safeParseJson } from '@/lib/admin/rate-limit';
+import { precautionToObjects, stepList } from '@/lib/equipment-normalize';
 
 export async function GET() {
   try {
@@ -10,12 +10,13 @@ export async function GET() {
       include: { equipment: { orderBy: { order: 'asc' } } },
     });
 
+    // 키오스크 규격으로 정규화 (구 문자열 주의사항 → 객체, 어떤 모양이 와도 안전)
     const result = measurements.map((m) => ({
       ...m,
       equipment: m.equipment.map((eq) => ({
         ...eq,
-        preparationSteps: safeParseJson<string[]>(eq.preparationSteps || '[]', []),
-        precautions: safeParseJson<unknown[]>(eq.precautions || '[]', []),
+        preparationSteps: stepList(eq.preparationSteps),
+        precautions: precautionToObjects(eq.precautions),
       })),
     }));
 

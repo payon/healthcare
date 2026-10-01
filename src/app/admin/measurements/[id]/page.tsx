@@ -54,6 +54,7 @@ import { toast } from 'sonner';
 import { useEffect, useState } from 'react';
 import type { MeasurementEquipment } from '@/hooks/admin/use-measurements';
 import { linkOrPathField } from '@/lib/admin/schemas';
+import { AdminImageField } from '@/components/admin/ImageField';
 
 const measurementFormSchema = z.object({
   key: z.string().min(1, '키를 입력하세요').max(50),
@@ -102,6 +103,7 @@ export default function MeasurementDetailPage() {
     handleSubmit: handleSubmitM,
     reset: resetM,
     watch: watchM,
+    setValue: setValueM,
     formState: { errors: errorsM, isDirty: isDirtyM },
   } = useForm<MeasurementFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -121,6 +123,7 @@ export default function MeasurementDetailPage() {
 
   const isActiveWatch = watchM('isActive');
   const colorWatch = watchM('color');
+  const imageUrlM = watchM('imageUrl');
 
   useEffect(() => {
     if (measurement) {
@@ -169,12 +172,15 @@ export default function MeasurementDetailPage() {
     register: registerE,
     handleSubmit: handleSubmitE,
     reset: resetE,
+    watch: watchE,
+    setValue: setValueE,
     formState: { errors: errorsE },
   } = useForm<EquipmentFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(equipmentFormSchema as any),
     defaultValues: { name: '', description: '', order: 0, imageUrl: '' },
   });
+  const imageUrlE = watchE('imageUrl');
 
   const openEquipDialog = (equip?: MeasurementEquipment) => {
     if (equip) {
@@ -285,11 +291,14 @@ export default function MeasurementDetailPage() {
               <Textarea id="description" rows={3} {...registerM('description')} />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="m-image">대표 이미지 URL (링크 또는 /admin-uploads/... 경로)</Label>
-              <Input id="m-image" placeholder="https://..." {...registerM('imageUrl')} />
-              {errorsM.imageUrl && <p className="text-sm text-destructive">{errorsM.imageUrl.message}</p>}
-            </div>
+            <AdminImageField
+              id="m-image"
+              label="대표 이미지 (측정장비안내 화면에 표시)"
+              value={imageUrlM || ''}
+              onChange={(url) => setValueM('imageUrl', url, { shouldDirty: true })}
+              category="general"
+            />
+            {errorsM.imageUrl && <p className="text-sm text-destructive">{errorsM.imageUrl.message}</p>}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -460,11 +469,14 @@ export default function MeasurementDetailPage() {
               <Textarea id="eq-desc" rows={2} {...registerE('description')} />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="eq-image">장비 이미지 URL (링크 또는 /admin-uploads/... 경로)</Label>
-              <Input id="eq-image" placeholder="https://..." {...registerE('imageUrl')} />
-              {errorsE.imageUrl && <p className="text-sm text-destructive">{errorsE.imageUrl.message}</p>}
-            </div>
+            <AdminImageField
+              id="eq-image"
+              label="장비 이미지 (장비 카드에 표시)"
+              value={imageUrlE || ''}
+              onChange={(url) => setValueE('imageUrl', url)}
+              category="equipment"
+            />
+            {errorsE.imageUrl && <p className="text-sm text-destructive">{errorsE.imageUrl.message}</p>}
 
             <div className="space-y-2">
               <Label htmlFor="eq-order">순서</Label>

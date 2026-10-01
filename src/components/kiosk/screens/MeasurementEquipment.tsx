@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
+import NextImage from 'next/image';
 import {
   Brain,
   Ruler,
@@ -298,12 +300,64 @@ function FallbackEquipmentCard({ equip }: { equip: EquipmentInfo }) {
   );
 }
 
+// ── Measurement group: header (icon + name + representative image) + equipment cards ──
+
+function MeasurementGroupHeaderImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl">
+      <NextImage
+        src={src}
+        alt={alt}
+        fill
+        sizes="100vw"
+        className="object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
+function MeasurementGroup({ measurement }: { measurement: MeasurementData }) {
+  const borderColor = measurement.color || '#0d9488';
+  return (
+    <motion.section variants={itemVariants} aria-label={measurement.name} className="space-y-5">
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+          style={{ backgroundColor: `${borderColor}15` }}
+        >
+          {renderMeasurementIcon(measurement.icon, 'h-6 w-6', { color: borderColor })}
+        </div>
+        <div>
+          <h3 className="text-2xl font-bold">{measurement.name}</h3>
+          {measurement.description && (
+            <p className="text-base text-muted-foreground">{measurement.description}</p>
+          )}
+        </div>
+      </div>
+      {measurement.imageUrl && (
+        <MeasurementGroupHeaderImage src={measurement.imageUrl} alt={measurement.name} />
+      )}
+      {measurement.equipment.map((equipment) => (
+        <DynamicEquipmentCard
+          key={equipment.id}
+          measurement={measurement}
+          equipment={equipment}
+        />
+      ))}
+    </motion.section>
+  );
+}
+
 export function MeasurementEquipment() {
   const { measurements, getContent } = useKioskContent();
   const content = getContent('measurement-equipment');
 
   // Check if we have API measurements with equipment
   const hasApiData = measurements.length > 0 && measurements.some((m) => m.equipment.length > 0);
+  const grouped = measurements.filter((m) => m.equipment.length > 0);
 
   return (
     <ContentLayout
@@ -329,18 +383,10 @@ export function MeasurementEquipment() {
         className="space-y-5"
       >
         {hasApiData
-          ? // Dynamic rendering from API
-            measurements
-              .filter((m) => m.equipment.length > 0)
-              .flatMap((measurement) =>
-                measurement.equipment.map((equipment) => (
-                  <DynamicEquipmentCard
-                    key={equipment.id}
-                    measurement={measurement}
-                    equipment={equipment}
-                  />
-                ))
-              )
+          ? // Dynamic rendering from API, grouped by measurement
+            grouped.map((measurement) => (
+              <MeasurementGroup key={measurement.id} measurement={measurement} />
+            ))
           : // Fallback hardcoded rendering
             equipments.map((equip) => (
               <FallbackEquipmentCard key={equip.name} equip={equip} />
