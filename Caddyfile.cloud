@@ -1,0 +1,19 @@
+# Standalone Caddy config (no CloudPanel).
+# SITE_ADDRESS comes from .env.cloud:
+#   - IP (e.g. 115.92.155.58) -> plain HTTP (Let's Encrypt cannot issue for IPs)
+#   - domain (DNS A -> this server) -> automatic HTTPS
+{
+	admin off
+}
+
+{$SITE_ADDRESS} {
+	header X-Frame-Options DENY
+	header X-Content-Type-Options nosniff
+	header Referrer-Policy strict-origin-when-cross-origin
+	reverse_proxy kiosk:3100 {
+		header_up Host {host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+}

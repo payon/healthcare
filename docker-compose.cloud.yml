@@ -1,0 +1,88 @@
+# Standalone deployment (no CloudPanel): DB + kiosk + Caddy reverse proxy.
+# Usage on the target server (e.g. 115.92.155.58):
+#   git clone <repo> && cd <repo>
+#   cp .env.cloud.example .env.cloud
+#   # edit .env.cloud (passwords + SITE_ADDRESS), then:
+#   docker compose -f docker-compose.cloud.yml --env-file .env.cloud up -d --build
+#
+# - SITE_ADDRESS=IP (e.g. 115.92.155.58)  -> plain HTTP on port 80
+#   (browsers show "not secure"; fine for LAN kiosk, avoid admin login over public Wi-Fi)
+# - SITE_ADDRESS=domain (DNS A -> server) -> automatic HTTPS via Let's Encrypt
+#   (requires ports 80+443 reachable from the internet)
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: biogram-db
+    restart: unless-stopped
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-biogram}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.cloud}
+      POSTGRES_DB: ${POSTGRES_DB:-biogram}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-biogram} -d $${POSTGRES_DB:-biogram}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kiosk:
+    build: .
+    image: biogram-kiosk:latest
+    container_name: biogram-kiosk
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "3100"
+    ports:
+      - "${APP_PORT:-3100}:3100"
+    environment:
+      PORT: 3100
+      HOSTNAME: 0.0.0.0
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-biogram}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-biogram}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (min 32 chars) in .env.cloud}
+      UPLOAD_DIR: /data/uploads
+      # First boot only: SEED_ON_START=true creates the admin from SEED_ADMIN_*.
+      # Leave true (idempotent) or set false after the first boot.
+      SEED_ON_START: ${SEED_ON_START:-true}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@biogram.co.kr}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_NAME: ${SEED_ADMIN_NAME:-최관리}
+    volumes:
+      - kiosk-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://localhost:3100/api/content').then(r=>{if(!r.ok)process.exit(1)})\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: biogram-caddy
+    restart: unless-stopped
+    depends_on:
+      kiosk:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-115.92.155.58}
+    volumes:
+      - ./Caddyfile.cloud:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  kiosk-data:
+  pgdata:
+  caddy-data:
+  caddy-config:
