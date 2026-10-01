@@ -1,57 +1,15 @@
 'use client';
 
-import { Home, Activity, BookOpen, Stethoscope, Menu } from 'lucide-react';
-import { useKioskStore, type Screen } from '@/store/kiosk-store';
+import { useKioskStore } from '@/store/kiosk-store';
+import { useBottomTabs } from './screens/MoreScreen';
 
-interface TabDef {
-  key: string;
-  label: string;
-  icon: React.ElementType;
-  screen: Screen;
-  /** Screens that should highlight this tab */
-  matches: Screen[];
-}
-
-const tabs: TabDef[] = [
-  {
-    key: 'home',
-    label: '홈',
-    icon: Home,
-    screen: 'main',
-    matches: ['main', 'standby'],
-  },
-  {
-    key: 'equipment',
-    label: '장비',
-    icon: Activity,
-    screen: 'equipment-intro',
-    matches: ['equipment-intro'],
-  },
-  {
-    key: 'guide',
-    label: '안내',
-    icon: BookOpen,
-    screen: 'signup',
-    matches: ['signup', 'vein-register', 'login'],
-  },
-  {
-    key: 'measure',
-    label: '측정',
-    icon: Stethoscope,
-    screen: 'measurement-mode',
-    matches: ['measurement-mode', 'measurement-equipment', 'results'],
-  },
-  {
-    key: 'more',
-    label: '더보기',
-    icon: Menu,
-    screen: 'main',
-    matches: ['location', 'app-install', 'non-member', 'completion'],
-  },
-];
-
+/**
+ * 모바일 하단 네비게이션: 홈 + 관리자 순서 상위 4개 + 더보기.
+ * 순서가 바뀌면 탭 구성도 함께 바뀐다.
+ */
 export function MobileBottomNav() {
-  const { currentScreen, navigateTo } = useKioskStore();
+  const { currentScreen, navigateTo, goHome } = useKioskStore();
+  const tabs = useBottomTabs();
 
   return (
     <nav
@@ -70,7 +28,7 @@ export function MobileBottomNav() {
               role="tab"
               aria-selected={isActive}
               aria-label={tab.label}
-              onClick={() => navigateTo(tab.screen)}
+              onClick={() => (tab.key === 'home' ? goHome() : navigateTo(tab.screen))}
               className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 transition-colors active:scale-95 ${
                 isActive
                   ? 'text-primary'

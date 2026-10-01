@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 
 export type Screen =
-  | 'standby'
   | 'main'
   | 'equipment-intro'
   | 'location'
@@ -13,7 +12,8 @@ export type Screen =
   | 'measurement-mode'
   | 'measurement-equipment'
   | 'results'
-  | 'completion';
+  | 'completion'
+  | 'more';
 
 interface KioskState {
   currentScreen: Screen;
@@ -26,9 +26,9 @@ interface KioskState {
   idleTimer: ReturnType<typeof setTimeout> | null;
   ttsEnabled: boolean;
   highContrast: boolean;
+  helpOpen: boolean;
 
   navigateTo: (screen: Screen) => void;
-  goBack: () => void;
   goHome: () => void;
   startSession: () => void;
   endSession: () => void;
@@ -38,9 +38,13 @@ interface KioskState {
   resetIdleTimer: () => void;
   setTtsEnabled: (v: boolean) => void;
   setHighContrast: (v: boolean) => void;
+  setHelpOpen: (v: boolean) => void;
 }
 
 const IDLE_TIMEOUT_MS = 120_000;
+
+/** 기기에서 돌고 있는 번들을 식별하는 빌드 태그 (diag 로그용 — 수정 시 갱신) */
+export const KIOSK_BUILD = '20260930g';
 
 const generateId = () => {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -54,7 +58,8 @@ const TOTAL_CONTENT_SCREENS: Screen[] = [
 ];
 
 export const useKioskStore = create<KioskState>((set, get) => ({
-  currentScreen: 'standby',
+  // 대기 화면 없음: 부팅 직후 메인 메뉴에서 시작 (세션은 boot effect에서 시작)
+  currentScreen: 'main',
   history: [],
   sessionId: '',
   sessionStarted: false,
@@ -62,11 +67,16 @@ export const useKioskStore = create<KioskState>((set, get) => ({
   visitedScreens: new Set<Screen>(),
   fontSize: 'normal',
   idleTimer: null,
-  ttsEnabled: false,
+  // 시니어 키오스크: 음성 안내 기본 ON (첫 터치 이후 화면마다 자동 낭독)
+  ttsEnabled: true,
   highContrast: false,
+  helpOpen: false,
 
   navigateTo: (screen: Screen) => {
     const { currentScreen, history, visitedScreens, sessionStarted } = get();
+    // 같은 화면 연타/중복 탭은 히스토리에 쌓지 않는다.
+    // (중복 푸시되면 뒤로가기가 같은 화면에 머물러 "안 먹히는" 것처럼 보인다)
+    if (screen === currentScreen) return;
     const updated = new Set(visitedScreens);
     updated.add(screen);
     set({
@@ -80,20 +90,6 @@ export const useKioskStore = create<KioskState>((set, get) => ({
     get().resetIdleTimer();
   },
 
-  goBack: () => {
-    const { history, visitedScreens } = get();
-    if (history.length === 0) {
-      set({ currentScreen: 'main' });
-      return;
-    }
-    const previous = history[history.length - 1];
-    set({
-      currentScreen: previous,
-      history: history.slice(0, -1),
-    });
-    logEvent(previous, 'back', get().currentScreen);
-    get().resetIdleTimer();
-  },
 
   goHome: () => {
     set({ currentScreen: 'main', history: [] });
@@ -110,16 +106,16 @@ export const useKioskStore = create<KioskState>((set, get) => ({
       history: [],
       visitedScreens: new Set<Screen>(),
     });
-    logEvent('main', 'session_start', 'standby');
+    logEvent('main', 'session_start', 'boot');
     get().resetIdleTimer();
   },
 
   endSession: () => {
     const state = get();
-    logEvent('standby', 'session_end', state.currentScreen);
+    logEvent('main', 'session_end', state.currentScreen);
     if (state.idleTimer) clearTimeout(state.idleTimer);
     set({
-      currentScreen: 'standby',
+      currentScreen: 'main',
       history: [],
       sessionId: '',
       sessionStarted: false,
@@ -132,7 +128,7 @@ export const useKioskStore = create<KioskState>((set, get) => ({
     const state = get();
     if (state.idleTimer) clearTimeout(state.idleTimer);
     set({
-      currentScreen: 'standby',
+      currentScreen: 'main',
       history: [],
       sessionId: '',
       sessionStarted: false,
@@ -149,15 +145,18 @@ export const useKioskStore = create<KioskState>((set, get) => ({
 
   setHighContrast: (v) => set({ highContrast: v }),
 
+  setHelpOpen: (v) => set({ helpOpen: v }),
+
   resetIdleTimer: () => {
     const { idleTimer, sessionStarted } = get();
     if (!sessionStarted) return;
     if (idleTimer) clearTimeout(idleTimer);
     const timer = setTimeout(() => {
       const state = useKioskStore.getState();
-      if (state.sessionStarted && state.currentScreen !== 'standby') {
-        logEvent('standby', 'idle_timeout', state.currentScreen);
-        state.endSession();
+      // 대기 화면 없음: 유휴 시 메인 메뉴로 복귀
+      if (state.sessionStarted && state.currentScreen !== 'main') {
+        logEvent('main', 'idle_timeout', state.currentScreen);
+        state.goHome();
       }
     }, IDLE_TIMEOUT_MS);
     set({ idleTimer: timer });
@@ -174,14 +173,14 @@ export function useProgress() {
   };
 }
 
-async function logEvent(screen: string, eventType: string, from?: string) {
+export async function logEvent(screen: string, eventType: string, from?: string) {
   const state = useKioskStore.getState();
   try {
     await fetch('/api/logs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        sessionId: state.sessionId || 'standby',
+        sessionId: state.sessionId || 'main',
         eventType,
         screen,
         detail: from || '',

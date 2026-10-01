@@ -224,7 +224,7 @@ export default function SettingsPage() {
             <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
               120초
             </p>
-            <p className="text-xs text-slate-400">사용자 입력이 없으면 대기 화면으로 복귀합니다</p>
+            <p className="text-xs text-slate-400">사용자 입력이 없으면 메인 화면으로 복귀합니다</p>
           </div>
           <Separator />
           <div className="flex items-center justify-between">

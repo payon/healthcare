@@ -26,3 +26,17 @@
 		}
 	}
 }
+
+# 운영: healthcare.rustkorea.cloud → kiosk(3100). TLS 자동 발급.
+# 전제: DNS A 레코드(healthcare.rustkorea.cloud → 서버 IP) + 80/443 개방.
+healthcare.rustkorea.cloud {
+	header X-Frame-Options DENY
+	header X-Content-Type-Options nosniff
+	header Referrer-Policy strict-origin-when-cross-origin
+	reverse_proxy localhost:3100 {
+		header_up Host {host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+}

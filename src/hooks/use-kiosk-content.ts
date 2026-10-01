@@ -81,6 +81,9 @@ export function useKioskContent() {
     refetchInterval: KIOSK_REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
     retry: 1,
+    // 폴링(isFetching 토글) 때마다 전 트리가 리렌더되어 저사양 기기가
+    // 버벅이던 문제 대응: 데이터·에러·최초로딩 변경 때만 통지
+    notifyOnChangeProps: ['data', 'error', 'isPending'],
   });
 
   const measurementQuery = useQuery({
@@ -95,6 +98,7 @@ export function useKioskContent() {
     refetchInterval: KIOSK_REFETCH_INTERVAL,
     refetchOnWindowFocus: true,
     retry: 1,
+    notifyOnChangeProps: ['data', 'error', 'isPending'],
   });
 
   const contents = contentQuery.data ?? [];

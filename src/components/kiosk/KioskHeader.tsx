@@ -5,7 +5,7 @@ import { ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useKioskStore, type Screen } from '@/store/kiosk-store';
 
-const screenTitleMap: Record<Exclude<Screen, 'standby' | 'main'>, string> = {
+const screenTitleMap: Record<Exclude<Screen, 'main'>, string> = {
   'equipment-intro': '장비 소개',
   'location': '설치 위치 안내',
   'app-install': '앱 설치 안내',
@@ -17,13 +17,14 @@ const screenTitleMap: Record<Exclude<Screen, 'standby' | 'main'>, string> = {
   'measurement-equipment': '측정 장비 안내',
   'results': '결과 확인 안내',
   'completion': '교육 완료',
+  'more': '더보기',
 };
 
 export function KioskHeader() {
-  const { currentScreen, goBack, goHome } = useKioskStore();
+  const { currentScreen, goHome } = useKioskStore();
 
-  // Don't render on standby or main menu
-  if (currentScreen === 'standby' || currentScreen === 'main') {
+  // Don't render on main menu. Desktop uses the sidebar instead (md:hidden).
+  if (currentScreen === 'main') {
     return null;
   }
 
@@ -34,14 +35,14 @@ export function KioskHeader() {
       initial={{ y: -64, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="sticky top-0 z-50 flex w-full items-center gap-3 border-b bg-background px-4 py-3 md:px-8"
+      className="sticky top-0 z-50 flex w-full items-center gap-3 border-b bg-background px-4 py-3 md:hidden md:px-8"
     >
       <Button
         variant="ghost"
         size="icon"
         className="min-h-12 min-w-12 shrink-0"
-        onClick={goBack}
-        aria-label="뒤로 가기"
+        onClick={goHome}
+        aria-label="메인으로 가기"
       >
         <ArrowLeft className="h-6 w-6" />
       </Button>

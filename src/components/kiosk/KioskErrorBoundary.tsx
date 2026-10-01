@@ -15,7 +15,7 @@ interface State {
  * Kiosk render safety net. Without this, any throw inside the newly-mounted
  * screen tree unmounts the whole UI (blank screen) while already-queued
  * speechSynthesis keeps speaking — exactly "voice but no screen".
- * The fallback stays visible and offers one-tap recovery to standby.
+ * The fallback stays visible and offers one-tap recovery to main.
  */
 export class KioskErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
@@ -31,7 +31,7 @@ export class KioskErrorBoundary extends Component<Props, State> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sessionId: useKioskStore.getState().sessionId || 'standby',
+          sessionId: useKioskStore.getState().sessionId || 'main',
           eventType: 'error',
           screen: useKioskStore.getState().currentScreen,
           detail: error instanceof Error ? error.message.slice(0, 500) : 'render error',

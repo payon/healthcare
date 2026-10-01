@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   FileText,
+  ListOrdered,
   Activity,
   Image,
   AppWindow,
@@ -36,6 +37,12 @@ const navItems: NavItem[] = [
     label: '콘텐츠 관리',
     href: '/admin/content',
     icon: FileText,
+    requiredPermission: 'content:read',
+  },
+  {
+    label: '메뉴 순서',
+    href: '/admin/menu-order',
+    icon: ListOrdered,
     requiredPermission: 'content:read',
   },
   {

@@ -67,3 +67,13 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# markdown docs (excluded from uploads)
+*.md
+
+# agent scratch / samples (not shipped)
+tool-results/
+examples/
+mini-services/
+download/
+agent-ctx/

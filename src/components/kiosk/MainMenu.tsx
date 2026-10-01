@@ -1,130 +1,22 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import {
-  Activity,
-  MapPin,
-  Smartphone,
-  UserPlus,
-  Fingerprint,
-  LogIn,
-  User,
-  ClipboardCheck,
-  Stethoscope,
-  FileBarChart,
-  ArrowRightCircle,
-} from 'lucide-react';
-import { useKioskStore, useProgress, type Screen } from '@/store/kiosk-store';
+import { ArrowRightCircle } from 'lucide-react';
+import { useKioskStore, useProgress } from '@/store/kiosk-store';
+import { DESKTOP_MENU_ITEMS, MOBILE_CARDS, type KioskMenuItem } from '@/lib/kiosk-menu';
 import { useKioskContent } from '@/hooks/use-kiosk-content';
 import { themeStyle } from '@/lib/kiosk-theme';
 import { KioskHeader } from './KioskHeader';
 import { KioskFooter } from './KioskFooter';
 import { AccessibilityToolbar } from './AccessibilityToolbar';
 import { MobileBottomNav } from './MobileBottomNav';
+import { DesktopSidebar, SIDEBAR_OFFSET_CLASS } from './DesktopSidebar';
 import { useTTS } from '@/hooks/use-tts';
+import { useMenuOrder } from '@/hooks/use-menu-order';
+import { sortByMenuOrder } from '@/lib/menu-order';
 
-/* ------------------------------------------------------------------ */
-/*  Desktop menu items (11 items, 3-column grid)                       */
-/* ------------------------------------------------------------------ */
-interface MenuItem {
-  screen: Screen;
-  label: string;
-  description: string;
-  icon: React.ElementType;
-  cta?: boolean;
-}
-
-const menuItems: MenuItem[] = [
-  {
-    screen: 'equipment-intro',
-    label: '장비 소개',
-    description: 'Biogram MINI 측정 항목을 소개합니다',
-    icon: Activity,
-  },
-  {
-    screen: 'location',
-    label: '설치 위치 안내',
-    description: '장비가 설치된 위치를 안내합니다',
-    icon: MapPin,
-  },
-  {
-    screen: 'app-install',
-    label: '앱 설치 안내',
-    description: '바이오그램 앱 설치 방법을 안내합니다',
-    icon: Smartphone,
-  },
-  {
-    screen: 'signup',
-    label: '회원가입 안내',
-    description: '회원가입 절차를 안내합니다',
-    icon: UserPlus,
-  },
-  {
-    screen: 'vein-register',
-    label: '지정맥 등록 안내',
-    description: '지정맥 등록 방법을 안내합니다',
-    icon: Fingerprint,
-  },
-  {
-    screen: 'login',
-    label: '로그인 안내',
-    description: '지정맥/QR 로그인 방법을 안내합니다',
-    icon: LogIn,
-  },
-  {
-    screen: 'non-member',
-    label: '비회원 안내',
-    description: '비회원 체험 방법을 안내합니다',
-    icon: User,
-  },
-  {
-    screen: 'measurement-mode',
-    label: '측정 시작 안내',
-    description: '전체측정/선택측정 방법을 안내합니다',
-    icon: ClipboardCheck,
-  },
-  {
-    screen: 'measurement-equipment',
-    label: '측정 장비 안내',
-    description: '각 장비별 측정 방법을 안내합니다',
-    icon: Stethoscope,
-  },
-  {
-    screen: 'results',
-    label: '결과 확인 안내',
-    description: '측정 결과 확인 방법을 안내합니다',
-    icon: FileBarChart,
-  },
-  {
-    screen: 'completion',
-    label: '실제 장비로 이동',
-    description: '교육을 마치고 장비로 이동합니다',
-    icon: ArrowRightCircle,
-    cta: true,
-  },
-];
-
-/* ------------------------------------------------------------------ */
-/*  Mobile horizontal-scroll category cards (9 items)                  */
-/* ------------------------------------------------------------------ */
-interface MobileCard {
-  screen: Screen;
-  label: string;
-  desc: string;
-  icon: React.ElementType;
-}
-
-const mobileCards: MobileCard[] = [
-  { screen: 'equipment-intro', label: '장비 알아보기', desc: '측정 항목 소개', icon: Activity },
-  { screen: 'location', label: '위치/설치', desc: '설치 위치 안내', icon: MapPin },
-  { screen: 'app-install', label: '앱 설치', desc: '앱 설치 방법', icon: Smartphone },
-  { screen: 'signup', label: '회원가입/로그인', desc: '가입 및 로그인', icon: UserPlus },
-  { screen: 'vein-register', label: '지정맥 등록', desc: '등록 방법 안내', icon: Fingerprint },
-  { screen: 'non-member', label: '비회원 안내', desc: '비회원 이용법', icon: User },
-  { screen: 'measurement-mode', label: '측정 시작', desc: '측정 모드 안내', icon: ClipboardCheck },
-  { screen: 'measurement-equipment', label: '장비별 안내', desc: '장비별 측정법', icon: Stethoscope },
-  { screen: 'results', label: '결과 확인', desc: '결과 확인 방법', icon: FileBarChart },
-];
+const menuItems: KioskMenuItem[] = DESKTOP_MENU_ITEMS;
+const mobileCards: KioskMenuItem[] = MOBILE_CARDS;
 
 /* ------------------------------------------------------------------ */
 /*  Animation variants                                                 */
@@ -200,13 +92,22 @@ export function MainMenu() {
   const { getContent } = useKioskContent();
   const content = getContent('main');
   const heading = content?.title || '무엇을 도와드릴까요?';
+  // 관리자 지정 순서 (completion CTA는 항상 맨 마지막 고정)
+  const menuOrder = useMenuOrder();
+  const orderedItems = sortByMenuOrder(
+    menuItems.filter((i) => i.screen !== 'completion'),
+    menuOrder
+  );
+  const completionItem = menuItems.find((i) => i.screen === 'completion')!;
+  const orderedCards = sortByMenuOrder(mobileCards, menuOrder);
 
   return (
     <div
-      className="flex min-h-screen flex-col bg-background"
+      className={`flex min-h-screen flex-col bg-background ${SIDEBAR_OFFSET_CLASS}`}
       style={themeStyle(content?.backgroundColor, content?.backgroundImageUrl)}
     >
-      {/* Desktop-only header (mobile has bottom nav instead) */}
+      <DesktopSidebar />
+      {/* Mobile-only header (desktop uses the sidebar instead) */}
       <KioskHeader />
 
       {/* Desktop floating accessibility toolbar */}
@@ -247,7 +148,7 @@ export function MainMenu() {
             animate="visible"
             className="mt-4 hidden grid-cols-3 gap-4 md:grid"
           >
-            {menuItems.map((item) => {
+            {orderedItems.map((item) => {
               const Icon = item.icon;
               return (
                 <motion.button
@@ -256,37 +157,41 @@ export function MainMenu() {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={() => navigateTo(item.screen)}
-                  className={`
-                    flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border p-4 text-center transition-colors md:p-6
-                    ${
-                      item.cta
-                        ? 'col-span-3 border-primary bg-primary text-primary-foreground hover:bg-primary/90'
-                        : 'bg-card hover:border-primary/40 hover:shadow-md'
-                    }
-                  `}
+                  className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border p-4 text-center transition-colors md:p-6 bg-card hover:border-primary/40 hover:shadow-md"
                 >
-                  <Icon
-                    className={`h-8 w-8 shrink-0 ${item.cta ? 'text-primary-foreground' : 'text-primary'}`}
-                  />
-                  <span
-                    className={`text-lg font-semibold ${item.cta ? 'text-primary-foreground' : 'text-foreground'}`}
-                  >
+                  <Icon className="h-8 w-8 shrink-0 text-primary" />
+                  <span className="text-lg font-semibold text-foreground">
                     {item.label}
                   </span>
-                  <span
-                    className={`text-sm ${item.cta ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}
-                  >
+                  <span className="text-sm text-muted-foreground">
                     {item.description}
                   </span>
                 </motion.button>
               );
             })}
+            {/* CTA는 항상 맨 마지막 고정 */}
+            <motion.button
+              key={completionItem.screen}
+              variants={itemVariants}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => navigateTo(completionItem.screen)}
+              className="col-span-3 flex min-h-28 flex-col items-center justify-center gap-2 rounded-2xl border border-primary bg-primary p-4 text-center transition-colors md:p-6 text-primary-foreground hover:bg-primary/90"
+            >
+              <ArrowRightCircle className="h-8 w-8 shrink-0 text-primary-foreground" />
+              <span className="text-lg font-semibold text-primary-foreground">
+                {completionItem.label}
+              </span>
+              <span className="text-sm text-primary-foreground/80">
+                {completionItem.description}
+              </span>
+            </motion.button>
           </motion.div>
 
           {/* Mobile: horizontally scrollable cards */}
           <div className="mt-4 md:hidden">
             <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 kiosk-scroll">
-              {mobileCards.map((card, i) => {
+              {orderedCards.map((card, i) => {
                 const Icon = card.icon;
                 return (
                   <motion.button
@@ -305,7 +210,7 @@ export function MainMenu() {
                       {card.label}
                     </span>
                     <span className="text-[11px] leading-tight text-muted-foreground">
-                      {card.desc}
+                      {card.description}
                     </span>
                   </motion.button>
                 );

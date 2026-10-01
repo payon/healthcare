@@ -31,6 +31,9 @@ services:
       - "${APP_PORT:-3100}:3100"
     environment:
       PORT: 3100
+      # NOTE: Next standalone binds to $HOSTNAME (container ID by default,
+      # localhost-only-ish). Force 0.0.0.0 so the healthcheck + proxy work.
+      HOSTNAME: 0.0.0.0
       NODE_ENV: production
       # PostgreSQL (same credentials as db service above)
       DATABASE_URL: postgresql://${POSTGRES_USER:-biogram}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-biogram}?schema=public

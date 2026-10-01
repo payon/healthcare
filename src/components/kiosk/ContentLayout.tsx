@@ -6,6 +6,7 @@ import { themeStyle } from '@/lib/kiosk-theme';
 import { KioskHeader } from './KioskHeader';
 import { KioskFooter } from './KioskFooter';
 import { MobileBottomNav } from './MobileBottomNav';
+import { DesktopSidebar, SIDEBAR_OFFSET_CLASS } from './DesktopSidebar';
 import { AccessibilityToolbar } from './AccessibilityToolbar';
 import { useTTS } from '@/hooks/use-tts';
 
@@ -24,9 +25,10 @@ export function ContentLayout({ title, children, notice, backgroundColor, backgr
 
   return (
     <div
-      className="flex min-h-screen flex-col bg-background"
+      className={`flex min-h-screen flex-col bg-background ${SIDEBAR_OFFSET_CLASS}`}
       style={themeStyle(backgroundColor, backgroundImageUrl)}
     >
+      <DesktopSidebar />
       <KioskHeader />
       <AccessibilityToolbar onReplay={speakIntro} onReplayFull={speakFull} />
 

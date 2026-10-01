@@ -1,15 +1,6 @@
 'use client';
 
-import { useKioskStore } from '@/store/kiosk-store';
-
 export function KioskFooter() {
-  const { currentScreen } = useKioskStore();
-
-  // Don't render on standby screen
-  if (currentScreen === 'standby') {
-    return null;
-  }
-
   return (
     <footer className="mt-auto border-t bg-background px-4 py-3 md:px-8">
       <div className="flex flex-col items-center gap-1">

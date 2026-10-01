@@ -30,7 +30,7 @@ const summaryItems = [
 ];
 
 export function CompletionScreen() {
-  const endSession = useKioskStore((state) => state.endSession);
+  const startSession = useKioskStore((state) => state.startSession);
   const { getContent } = useKioskContent();
   const content = getContent('completion');
   const dbSteps = useScreenSteps('completion');
@@ -88,7 +88,7 @@ export function CompletionScreen() {
           <button
             type="button"
             className="kiosk-btn-primary w-full min-h-20 text-xl"
-            onClick={endSession}
+            onClick={startSession}
           >
             실제 장비에서 측정 시작하기
             <ArrowRight className="h-6 w-6" />
@@ -96,7 +96,7 @@ export function CompletionScreen() {
           <button
             type="button"
             className="kiosk-btn-secondary w-full"
-            onClick={endSession}
+            onClick={startSession}
           >
             처음으로 돌아가기
           </button>

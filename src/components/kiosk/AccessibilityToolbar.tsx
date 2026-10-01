@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Type, Volume2, VolumeX, Eye, RotateCcw } from 'lucide-react';
+import { Type, Volume2, VolumeX, Eye, RotateCcw, CircleHelp } from 'lucide-react';
 import { useKioskStore } from '@/store/kiosk-store';
 
 // ========================================
@@ -90,7 +90,7 @@ function MobileToolbar({
   onReplay: () => void;
   onReplayFull: () => void;
 }) {
-  const { fontSize, setFontSize, ttsEnabled, setTtsEnabled, highContrast, setHighContrast } =
+  const { fontSize, setFontSize, ttsEnabled, setTtsEnabled, highContrast, setHighContrast, setHelpOpen } =
     useKioskStore();
 
   return (
@@ -99,6 +99,19 @@ function MobileToolbar({
       role="toolbar"
       aria-label="접근성 설정"
     >
+      {/* 도움말 */}
+      <button
+        onClick={() => setHelpOpen(true)}
+        aria-label="이용 방법 도움말 열기"
+        className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+      >
+        <CircleHelp className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">도움말</span>
+      </button>
+
+      {/* 구분선 */}
+      <div className="mx-0.5 h-5 w-px bg-border" />
+
       {/* 글꼴 크기 */}
       {sizeOptions.map((opt) => (
         <button
@@ -141,6 +154,28 @@ function MobileToolbar({
         <span className="hidden sm:inline">TTS</span>
       </button>
 
+      {/* 다시 듣기 (TTS ON일 때만) */}
+      {ttsEnabled && (
+        <>
+          <button
+            onClick={onReplay}
+            aria-label="요약 다시 듣기"
+            className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">요약</span>
+          </button>
+          <button
+            onClick={onReplayFull}
+            aria-label="전체 다시 듣기"
+            className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">전체</span>
+          </button>
+        </>
+      )}
+
       {/* 고대비 토글 */}
       <button
         onClick={() => setHighContrast(!highContrast)}
@@ -170,7 +205,7 @@ function DesktopToolbar({
   onReplayFull: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { fontSize, setFontSize, ttsEnabled, setTtsEnabled, highContrast, setHighContrast } =
+  const { fontSize, setFontSize, ttsEnabled, setTtsEnabled, highContrast, setHighContrast, setHelpOpen } =
     useKioskStore();
 
   const handleAction = useCallback(
@@ -281,7 +316,7 @@ function DesktopToolbar({
             <div className="mb-4 h-px bg-border" />
 
             {/* 고대비 */}
-            <div>
+            <div className="mb-4">
               <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 화면 표시
               </p>
@@ -296,6 +331,24 @@ function DesktopToolbar({
               >
                 <Eye className="h-4 w-4" />
                 <span>{highContrast ? '고대비 켜짐' : '고대비 꺼짐'}</span>
+              </button>
+            </div>
+
+            {/* 구분선 */}
+            <div className="mb-4 h-px bg-border" />
+
+            {/* 도움말 */}
+            <div>
+              <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                이용 안내
+              </p>
+              <button
+                onClick={() => handleAction(() => setHelpOpen(true))}
+                aria-label="이용 방법 도움말 열기"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary"
+              >
+                <CircleHelp className="h-4 w-4" />
+                <span>이용 방법 보기</span>
               </button>
             </div>
           </motion.div>

@@ -82,7 +82,7 @@ export const sectionUpdateSchema = z.object({
 
 export const kioskLogSchema = z.object({
   sessionId: z.string().min(1).max(64),
-  eventType: z.enum(['navigate', 'back', 'home', 'session_start', 'session_end', 'idle_timeout', 'error']),
+  eventType: z.enum(['navigate', 'back', 'home', 'session_start', 'session_end', 'idle_timeout', 'error', 'diag']),
   screen: z.string().max(64).optional().nullable(),
   detail: z.string().max(500).optional().nullable(),
 });
