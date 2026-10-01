@@ -17,6 +17,7 @@ interface ResponsiveImageProps {
 
 /**
  * Senior-friendly responsive image for kiosks (mobile 360px → 32" 1080p+).
+ * 16:9 고정 크롭: 원본 비율·기기 크기와 무관하게 항상 같은 크기로 보인다.
  * next/image builds a srcset from the file, and `sizes` tells the browser
  * which width to fetch, so small screens load fast and large kiosk screens
  * stay sharp. Any load/remote-config failure falls back to a bundled image
@@ -26,25 +27,23 @@ export function ResponsiveImage({
   src,
   fallbackSrc,
   alt,
-  width,
-  height,
   sizes = '100vw',
   priority,
-  className,
 }: ResponsiveImageProps) {
   const [failed, setFailed] = useState(false);
   const effectiveSrc = !src || failed ? fallbackSrc : src;
 
   return (
-    <Image
-      src={effectiveSrc}
-      alt={alt}
-      width={width ?? 1344}
-      height={height ?? 768}
-      sizes={sizes}
-      priority={priority}
-      className={className}
-      onError={() => setFailed(true)}
-    />
+    <div className="relative aspect-video w-full overflow-hidden">
+      <Image
+        src={effectiveSrc}
+        alt={alt}
+        fill
+        sizes={sizes}
+        priority={priority}
+        className="object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 }

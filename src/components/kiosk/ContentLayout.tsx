@@ -11,19 +11,18 @@ import { DesktopSidebar, SIDEBAR_OFFSET_CLASS } from './DesktopSidebar';
 import { AccessibilityToolbar } from './AccessibilityToolbar';
 import { useTTS } from '@/hooks/use-tts';
 
-/** 대표 이미지 히어로. 로드 실패 시 조용히 숨김 (잘못된 URL이 화면을 깨지 않음) */
+/** 대표 이미지 히어로. 16:9 고정 크롭으로 기기·원본 비율과 무관하게 일정하게 표시. */
 function ContentHeroImage({ src, alt }: { src: string; alt: string }) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   return (
-    <div className="mb-6 overflow-hidden rounded-xl">
+    <div className="relative mb-6 aspect-video w-full overflow-hidden rounded-xl">
       <Image
         src={src}
         alt={alt}
-        width={1344}
-        height={768}
+        fill
         sizes="100vw"
-        className="h-auto w-full object-cover"
+        className="object-cover"
         onError={() => setFailed(true)}
       />
     </div>
