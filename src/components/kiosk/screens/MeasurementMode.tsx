@@ -92,6 +92,7 @@ export function MeasurementMode() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={content?.title || '측정 모드 안내'}
       notice="측정은 실제 Biogram MINI 장비에서 진행됩니다. 장비 화면의 안내에 따라 측정을 시작하세요."
       backgroundColor={content?.backgroundColor}

@@ -67,6 +67,7 @@ export function Signup() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={content?.title || '회원가입 안내'}
       notice="회원가입은 실제 Biogram MINI 장비에서 진행됩니다. 본 교육 키오스크에서는 가입 절차만 안내합니다."
       backgroundColor={content?.backgroundColor}

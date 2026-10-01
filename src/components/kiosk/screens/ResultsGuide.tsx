@@ -33,6 +33,7 @@ export function ResultsGuide() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={content?.title || '결과 확인 안내'}
       backgroundColor={content?.backgroundColor}
       backgroundImageUrl={content?.backgroundImageUrl}

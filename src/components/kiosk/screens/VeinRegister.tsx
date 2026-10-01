@@ -67,6 +67,7 @@ export function VeinRegister() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={content?.title || '지정맥 등록 안내'}
       notice="지정맥 등록은 실제 Biogram MINI 장비에서 진행됩니다."
       backgroundColor={content?.backgroundColor}

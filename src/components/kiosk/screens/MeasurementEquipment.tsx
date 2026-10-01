@@ -307,6 +307,7 @@ export function MeasurementEquipment() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={content?.title || '측정 장비 안내'}
       notice="모든 측정은 실제 Biogram MINI 장비에서 진행됩니다. 장비의 음성 안내에 따라 진행해 주세요."
       backgroundColor={content?.backgroundColor}

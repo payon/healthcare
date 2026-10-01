@@ -40,6 +40,7 @@ export function AppInstall() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={title}
       backgroundColor={content?.backgroundColor}
       backgroundImageUrl={content?.backgroundImageUrl}

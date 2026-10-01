@@ -1,6 +1,7 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import { useKioskStore } from '@/store/kiosk-store';
 import { themeStyle } from '@/lib/kiosk-theme';
 import { KioskHeader } from './KioskHeader';
@@ -10,15 +11,36 @@ import { DesktopSidebar, SIDEBAR_OFFSET_CLASS } from './DesktopSidebar';
 import { AccessibilityToolbar } from './AccessibilityToolbar';
 import { useTTS } from '@/hooks/use-tts';
 
+/** 대표 이미지 히어로. 로드 실패 시 조용히 숨김 (잘못된 URL이 화면을 깨지 않음) */
+function ContentHeroImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div className="mb-6 overflow-hidden rounded-xl">
+      <Image
+        src={src}
+        alt={alt}
+        width={1344}
+        height={768}
+        sizes="100vw"
+        className="h-auto w-full object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
 interface ContentLayoutProps {
   title?: string;
   children: ReactNode;
   notice?: string;
   backgroundColor?: string | null;
   backgroundImageUrl?: string | null;
+  /** 대표 이미지 (관리자 콘텐츠 imageUrl). 설정된 화면에만 히어로로 표시 */
+  imageUrl?: string | null;
 }
 
-export function ContentLayout({ title, children, notice, backgroundColor, backgroundImageUrl }: ContentLayoutProps) {
+export function ContentLayout({ title, children, notice, backgroundColor, backgroundImageUrl, imageUrl }: ContentLayoutProps) {
   const { isMobile } = useKioskStore();
   // autoSpeak 없음 = 자동 읽기 안 함, replay 버튼만 사용
   const { speakIntro, speakFull } = useTTS();
@@ -39,6 +61,7 @@ export function ContentLayout({ title, children, notice, backgroundColor, backgr
               {title}
             </h2>
           )}
+          {imageUrl && <ContentHeroImage src={imageUrl} alt={title || '안내 이미지'} />}
           {children}
           {notice && (
             <div className="notice-box mt-8">

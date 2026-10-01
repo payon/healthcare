@@ -3,8 +3,9 @@ services:
     image: postgres:18-alpine
     container_name: biogram-db
     restart: unless-stopped
+    # DB는 로컬바인드 (인터넷 직접 노출 금지 — CloudPanel/Caddy는 localhost로 중계)
     ports:
-      - "${PG_PORT:-5432}:5432"
+      - "127.0.0.1:${PG_PORT:-5432}:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-biogram}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before 'docker compose up'}

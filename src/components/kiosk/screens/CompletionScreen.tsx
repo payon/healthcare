@@ -38,6 +38,7 @@ export function CompletionScreen() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={content?.title || '교육 완료'}
       backgroundColor={content?.backgroundColor}
       backgroundImageUrl={content?.backgroundImageUrl}

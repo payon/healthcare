@@ -79,6 +79,7 @@ export function LoginGuide() {
 
   return (
     <ContentLayout
+      imageUrl={content?.imageUrl}
       title={content?.title || '로그인 안내'}
       notice="로그인은 실제 Biogram MINI 장비에서 진행됩니다."
       backgroundColor={content?.backgroundColor}
