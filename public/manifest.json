@@ -1,28 +1,79 @@
 {
+  "id": "/",
   "name": "Biogram MINI 헬스케어 장비 이용 교육",
   "short_name": "바이오그램 교육",
   "description": "Biogram MINI 헬스케어 장비 이용 교육 키오스크",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#f0fdfa",
   "theme_color": "#0d9488",
   "categories": ["health", "education", "medical"],
   "lang": "ko",
+  "dir": "ltr",
   "icons": [
-    {
-      "src": "/pwa-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
     {
       "src": "/pwa-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/kiosk-images/screenshot-equipment.jpg",
+      "sizes": "1344x768",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/kiosk-images/screenshot-location.jpg",
+      "sizes": "1344x768",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/kiosk-images/screenshot-equipment-narrow.jpg",
+      "sizes": "768x1344",
+      "type": "image/jpeg",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/kiosk-images/screenshot-location-narrow.jpg",
+      "sizes": "768x1344",
+      "type": "image/jpeg",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "장비 소개",
+      "url": "/?screen=equipment-intro",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "설치 위치",
+      "url": "/?screen=location",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "측정 안내",
+      "url": "/?screen=measurement-mode",
+      "icons": [{ "src": "/pwa-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
   "prefer_related_applications": false
 }

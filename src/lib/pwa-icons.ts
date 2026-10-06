@@ -31,8 +31,8 @@ export const PWA_ICON_SLOTS: PwaIconSlot[] = [
     size: 512,
     purpose: 'maskable',
     label: '마스크블 512',
-    description: 'Android 적응형 아이콘 (원본을 80%로 축소+여백 처리)',
-    defaultUrl: '/pwa-icon-512.png',
+    description: 'Android 적응형 아이콘 (80% 세이프존+여백 처리)',
+    defaultUrl: '/pwa-maskable-512.png',
   },
   {
     slot: 'apple-180',
@@ -75,43 +75,59 @@ export async function ensurePwaIcons(): Promise<PwaIconState[]> {
 }
 
 export function buildManifest(name: string, shortName: string, icons: PwaIconState[]) {
+  const iconEntries = icons
+    .filter((i) => i.slot !== 'apple-180')
+    .map((i) => ({
+      src: i.url,
+      sizes: `${i.size}x${i.size}`,
+      type: 'image/png',
+      purpose: i.purpose === 'maskable' ? 'maskable' : 'any',
+    }));
   return {
+    id: '/',
     name,
     short_name: shortName,
     description: 'Biogram MINI 헬스케어 장비 이용 교육 키오스크',
     start_url: '/',
+    scope: '/',
     display: 'standalone',
     orientation: 'any',
     background_color: '#f0fdfa',
     theme_color: '#0d9488',
     categories: ['health', 'education', 'medical'],
     lang: 'ko',
-    icons: icons
-      .filter((i) => i.slot !== 'apple-180')
-      .map((i) => ({
-        src: i.url,
-        sizes: `${i.size}x${i.size}`,
-        type: 'image/png',
-        purpose: i.purpose === 'maskable' ? 'maskable' : 'any',
-      })),
+    dir: 'ltr',
+    icons: iconEntries,
     screenshots: [
       {
-        src: '/kiosk-images/equipment.png',
+        src: '/kiosk-images/screenshot-equipment.jpg',
         sizes: '1344x768',
-        type: 'image/png',
+        type: 'image/jpeg',
         form_factor: 'wide',
       },
       {
-        src: '/kiosk-images/location.png',
+        src: '/kiosk-images/screenshot-location.jpg',
         sizes: '1344x768',
-        type: 'image/png',
+        type: 'image/jpeg',
         form_factor: 'wide',
+      },
+      {
+        src: '/kiosk-images/screenshot-equipment-narrow.jpg',
+        sizes: '768x1344',
+        type: 'image/jpeg',
+        form_factor: 'narrow',
+      },
+      {
+        src: '/kiosk-images/screenshot-location-narrow.jpg',
+        sizes: '768x1344',
+        type: 'image/jpeg',
+        form_factor: 'narrow',
       },
     ],
     shortcuts: [
-      { name: '장비 소개', url: '/?screen=equipment-intro' },
-      { name: '설치 위치', url: '/?screen=location' },
-      { name: '측정 안내', url: '/?screen=measurement-mode' },
+      { name: '장비 소개', url: '/?screen=equipment-intro', icons: [{ src: '/pwa-icon-192.png', sizes: '192x192', type: 'image/png' }] },
+      { name: '설치 위치', url: '/?screen=location', icons: [{ src: '/pwa-icon-192.png', sizes: '192x192', type: 'image/png' }] },
+      { name: '측정 안내', url: '/?screen=measurement-mode', icons: [{ src: '/pwa-icon-192.png', sizes: '192x192', type: 'image/png' }] },
     ],
     prefer_related_applications: false,
   };

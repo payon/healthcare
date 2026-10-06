@@ -42,6 +42,7 @@ services:
       #   export JWT_SECRET=$(openssl rand -base64 48)
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET before 'docker compose up'}
       UPLOAD_DIR: /data/uploads
+      ASSETLINKS_JSON: ${ASSETLINKS_JSON:-}
       # First boot only: set SEED_ON_START=true + SEED_ADMIN_* to create the
       # admin account, then set SEED_ON_START=false and recreate.
       SEED_ON_START: ${SEED_ON_START:-false}

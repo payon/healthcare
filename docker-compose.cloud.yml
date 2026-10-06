@@ -52,6 +52,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-biogram}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-biogram}?schema=public
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (min 32 chars) in .env.cloud}
       UPLOAD_DIR: /data/uploads
+      ASSETLINKS_JSON: ${ASSETLINKS_JSON:-}
       # First boot only: SEED_ON_START=true creates the admin from SEED_ADMIN_*.
       # Leave true (idempotent) or set false after the first boot.
       SEED_ON_START: ${SEED_ON_START:-true}

@@ -1,26 +1,22 @@
 import { NextResponse } from 'next/server';
 
-// GET /.well-known/assetlinks.json - Digital Asset Links for TWA packaging.
-// Configure via ASSETLINKS_JSON env (the full JSON array from Play Console /
-// Bubblewrap). Returns 404 until configured — TWA builders will tell you.
+export const dynamic = 'force-dynamic';
+
+// GET /.well-known/assetlinks.json - Digital Asset Links for TWA (Play Store).
+// Set ASSETLINKS_JSON env to a JSON array, e.g.:
+//   [{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"kr.co.biogram.mini","sha256_cert_fingerprints":["AA:BB:..."]}}]
+// The SHA-256 comes from Play Console → App integrity → App signing key certificate.
+// Until configured, returns an empty array (PWABuilder TWA check will flag it).
 export async function GET() {
-  const raw = process.env.ASSETLINKS_JSON;
-  if (!raw) {
-    return NextResponse.json(
-      { error: 'Asset Links not configured (set ASSETLINKS_JSON)' },
-      { status: 404 }
-    );
-  }
   try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error('must be an array');
+    const raw = process.env.ASSETLINKS_JSON || '[]';
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) throw new Error('ASSETLINKS_JSON must be a JSON array');
     return NextResponse.json(parsed, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=3600',
-      },
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' },
     });
-  } catch {
-    return NextResponse.json({ error: 'Invalid ASSETLINKS_JSON' }, { status: 500 });
+  } catch (error) {
+    console.error('AssetLinks error:', error);
+    return NextResponse.json([], { status: 500 });
   }
 }

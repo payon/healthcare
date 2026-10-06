@@ -1,17 +1,20 @@
-// biogram-mini SW v3 — freshness-first.
+// biogram-mini SW v4 — freshness-first.
 // - Navigations (HTML): network-first, cache fallback (offline) → admin edits
 //   and deploys reach the kiosk immediately; stale HTML (old CSP headers /
 //   rotated /_next chunk hashes) can never stick.
 // - /_next/static/* (content-hashed, immutable): cache-first.
 // - /api/* and /admin/*: network only, never cached (fresh data, no PII at rest).
 // - kiosk images and other GET: stale-while-revalidate.
-const CACHE_NAME = 'biogram-mini-v3';
+const CACHE_NAME = 'biogram-mini-v4';
 const STATIC_ASSETS = [
-  '/manifest.json',
+  '/',
   '/pwa-icon-192.png',
   '/pwa-icon-512.png',
-  '/kiosk-images/equipment.png',
-  '/kiosk-images/location.png',
+  '/pwa-maskable-512.png',
+  '/kiosk-images/screenshot-equipment.jpg',
+  '/kiosk-images/screenshot-location.jpg',
+  '/kiosk-images/screenshot-equipment-narrow.jpg',
+  '/kiosk-images/screenshot-location-narrow.jpg',
 ];
 
 self.addEventListener('install', (event) => {
