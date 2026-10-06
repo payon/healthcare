@@ -91,6 +91,10 @@ export function buildManifest(name: string, shortName: string, icons: PwaIconSta
     start_url: '/',
     scope: '/',
     display: 'standalone',
+    // 미지원 환경 폴백용. 단말이 standalone을 못 쓰면 minimal-ui로.
+    display_override: ['standalone', 'minimal-ui'],
+    // 바로가기·재실행 시 창 중복 방지 (기존 창에서 이동)
+    launch_handler: { client_mode: 'navigate-existing' },
     orientation: 'any',
     background_color: '#f0fdfa',
     theme_color: '#0d9488',
