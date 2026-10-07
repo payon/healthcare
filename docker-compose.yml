@@ -29,7 +29,8 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "${APP_PORT:-3100}:3100"
+      # localhost 바인드: CloudPanel이 중계하므로 외부 직접 노출 불필요
+      - "127.0.0.1:${APP_PORT:-3100}:3100"
     environment:
       PORT: 3100
       # NOTE: Next standalone binds to $HOSTNAME (container ID by default,
